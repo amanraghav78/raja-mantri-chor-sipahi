@@ -33,6 +33,7 @@ export default function RoomView({
   const seatsLeft = 4 - roomState.players.length;
   const canStart = full && roomState.state === "lobby";
   const isFinished = roomState.state === "finished";
+  const allSeen = (roomState.revealedCount ?? 0) >= roomState.players.length;
 
   function emit(event, payload, fallbackError) {
     setError("");
@@ -138,8 +139,16 @@ export default function RoomView({
           <div className="phase">
             {myRole ? (
               <>
-                <RoleCard myRole={myRole} />
+                <RoleCard
+                  myRole={myRole}
+                  onReveal={() => socket.emit("round:revealed", { code: roomState.code })}
+                />
                 <GuessTimer deadline={roomState.guessDeadline} />
+                {allSeen ? null : (
+                  <p className="hint">
+                    {roomState.revealedCount} of {roomState.players.length} have seen their coin
+                  </p>
+                )}
                 {myRole.isSipahi ? (
                   <GuessPanel
                     code={roomState.code}
@@ -150,7 +159,15 @@ export default function RoomView({
                   <div className="waiting">
                     <div className="spinner" />
                     <p className="hint">
-                      The Sipahi is deciding<span className="dots" />
+                      {allSeen ? (
+                        <>
+                          The Sipahi is deciding<span className="dots" />
+                        </>
+                      ) : (
+                        <>
+                          Waiting for the table<span className="dots" />
+                        </>
+                      )}
                     </p>
                   </div>
                 )}

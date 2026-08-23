@@ -4,7 +4,7 @@ import RoleCrest from "./RoleCrest.jsx";
 import { Mandala } from "./Ornament.jsx";
 import { playCoinFlip, playSealStamp, vibrate } from "../sound.js";
 
-export default function RoleCard({ myRole }) {
+export default function RoleCard({ myRole, onReveal }) {
   const [flipped, setFlipped] = useState(false);
   const cfg = ROLE_CONFIG[myRole.role] || {};
 
@@ -16,6 +16,7 @@ export default function RoleCard({ myRole }) {
   function flip() {
     if (flipped) return;
     setFlipped(true);
+    onReveal?.();
     playCoinFlip();
     vibrate(18);
     // The seal lands as the coin settles, not when it starts spinning.

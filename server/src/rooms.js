@@ -46,6 +46,7 @@ export class RoomManager {
       },
       assignment: null,
       previousRoles: null,
+      revealed: new Set(), // playerIds who have turned their coin over this round
       lastResult: null,
       history: [],
       createdAt: Date.now(),
@@ -141,6 +142,10 @@ export class RoomManager {
       totalRounds: room.settings.totalRounds,
       settings: { ...room.settings },
       guessDeadline: room.guessDeadline || null,
+      // Bots have nothing to look at, so they count as ready from the start.
+      revealedCount: Array.from(room.players.values()).filter(
+        (p) => p.isBot || room.revealed.has(p.id)
+      ).length,
       players: Array.from(room.players.values()).map((p) => ({
         id: p.id,
         nickname: p.nickname,
