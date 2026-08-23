@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { socket } from "./socket.js";
+import { pushToast } from "./toast.js";
 import Home from "./pages/Home.jsx";
 import RoomView from "./pages/Room.jsx";
+import ToastStack from "./components/ToastStack.jsx";
 
 const STORAGE_KEY = "raja-mantri-session";
 
@@ -30,12 +32,22 @@ function clearSession() {
   }
 }
 
+function readCodeFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get("code")?.toUpperCase() || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function App() {
   const [playerId, setPlayerId] = useState(null);
   const [roomState, setRoomState] = useState(null);
   const [myRole, setMyRole] = useState(null);
   const [error, setError] = useState("");
   const sessionRef = useRef(loadSession());
+  const prevPlayersRef = useRef(new Map());
+  const initialCodeRef = useRef(readCodeFromUrl());
 
   useEffect(() => {
     function onConnect() {
@@ -51,6 +63,17 @@ export default function App() {
       });
     }
     function onRoomUpdate(state) {
+      const prev = prevPlayersRef.current;
+      state.players.forEach((p) => {
+        const before = prev.get(p.id);
+        if (before && before.connected && !p.connected) {
+          pushToast(`${p.nickname} disconnected`, "warn");
+        } else if (before && !before.connected && p.connected) {
+          pushToast(`${p.nickname} reconnected`, "success");
+        }
+      });
+      prevPlayersRef.current = new Map(state.players.map((p) => [p.id, p]));
+
       setRoomState(state);
       if (state.state === "lobby") setMyRole(null);
     }
@@ -100,6 +123,7 @@ export default function App() {
   const leaveRoom = useCallback(() => {
     clearSession();
     sessionRef.current = null;
+    prevPlayersRef.current = new Map();
     socket.disconnect();
     socket.connect();
     setPlayerId(null);
@@ -108,18 +132,21 @@ export default function App() {
     setError("");
   }, []);
 
-  if (!roomState || !playerId) {
-    return <Home onCreate={createRoom} onJoin={joinRoom} error={error} />;
-  }
-
   return (
-    <RoomView
-      roomState={roomState}
-      playerId={playerId}
-      myRole={myRole}
-      error={error}
-      setError={setError}
-      onLeave={leaveRoom}
-    />
+    <>
+      <ToastStack />
+      {!roomState || !playerId ? (
+        <Home onCreate={createRoom} onJoin={joinRoom} error={error} initialCode={initialCodeRef.current} />
+      ) : (
+        <RoomView
+          roomState={roomState}
+          playerId={playerId}
+          myRole={myRole}
+          error={error}
+          setError={setError}
+          onLeave={leaveRoom}
+        />
+      )}
+    </>
   );
 }

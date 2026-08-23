@@ -236,6 +236,23 @@ body {
   background: transparent;
 }
 
+.player-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-remove {
+  background: transparent;
+  border: 1px solid var(--wrong);
+  color: var(--wrong);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .player-name {
   display: flex;
   align-items: center;
@@ -267,12 +284,49 @@ body {
   text-align: center;
 }
 
+.role-flip {
+  perspective: 1000px;
+}
+
+.role-flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.role-flip-active .role-flip-inner {
+  transform: rotateY(180deg);
+}
+
 .role-card {
   background: var(--surface);
   border-radius: var(--radius);
   padding: 32px 16px;
   text-align: center;
   border: 2px solid var(--surface-2);
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-card-back {
+  transform: rotateY(0deg);
+}
+
+.role-card-front {
+  transform: rotateY(180deg);
+}
+
+.role-back-mark {
+  font-size: 3.5rem;
+  color: var(--text-dim);
+  opacity: 0.5;
 }
 
 .role-emoji {
@@ -366,6 +420,162 @@ body {
   font-weight: 800;
   color: var(--accent);
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  padding: 6px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.guess-timer {
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+.guess-timer-urgent {
+  color: var(--wrong);
+  animation: pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.share-room {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.share-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.share-actions .btn {
+  flex: 1;
+}
+
+.qr-wrap {
+  background: #f2f2f7;
+  padding: 12px;
+  border-radius: 12px;
+  display: inline-flex;
+}
+
+.toast-stack {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  width: min(90vw, 380px);
+}
+
+.toast {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-warn {
+  border-left: 3px solid var(--wrong);
+}
+
+.toast-success {
+  border-left: 3px solid var(--correct);
+}
+
+.toast-info {
+  border-left: 3px solid var(--accent);
+}
+
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 20px 0 8px;
+}
+
+.podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  gap: 4px;
+}
+
+.podium-crown {
+  font-size: 1.4rem;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.podium-medal {
+  font-size: 1.6rem;
+}
+
+.podium-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.podium-score {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.podium-bar {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: var(--surface-2);
+}
+
+.podium-first .podium-bar { height: 90px; background: var(--raja); }
+.podium-second .podium-bar { height: 65px; background: var(--mantri); }
+.podium-third .podium-bar { height: 45px; background: var(--sipahi); }
+.podium-other .podium-bar { height: 30px; }
 
 @media (min-width: 480px) {
   .screen {

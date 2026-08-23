@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 4000;
 const ORIGIN = process.env.CLIENT_ORIGIN || "*";
 const MAX_PLAYERS = 4;
 const DISCONNECTED_ROOM_TTL_MS = 5 * 60 * 1000;
+const GUESS_TIME_MS = 20000;
 
 const app = express();
 app.use(cors({ origin: ORIGIN }));
@@ -55,6 +56,61 @@ function scheduleRoomSweep(code) {
       rooms.deleteRoom(code);
     }
   }, DISCONNECTED_ROOM_TTL_MS);
+}
+
+function clearGuessTimer(room) {
+  if (room.guessTimer) {
+    clearTimeout(room.guessTimer);
+    room.guessTimer = null;
+  }
+  room.guessDeadline = null;
+}
+
+function finishRound(room, guessedPlayerId, { timedOut = false } = {}) {
+  clearGuessTimer(room);
+
+  const { correct, chorId, roundPoints } = resolveGuess({
+    assignment: room.assignment,
+    guessedPlayerId,
+  });
+
+  for (const [pid, pts] of Object.entries(roundPoints)) {
+    const player = room.players.get(pid);
+    if (player) player.score += pts;
+  }
+
+  room.state = "result";
+  room.lastResult = {
+    correct,
+    timedOut,
+    roles: Object.fromEntries(
+      Object.entries(room.assignment).map(([id, r]) => [
+        id,
+        { role: r.name, nickname: room.players.get(id)?.nickname },
+      ])
+    ),
+    roundPoints,
+    chorNickname: room.players.get(chorId)?.nickname,
+  };
+  room.assignment = null;
+}
+
+function armGuessTimer(room, code) {
+  clearGuessTimer(room);
+  room.guessDeadline = Date.now() + GUESS_TIME_MS;
+  room.guessTimer = setTimeout(() => {
+    const current = rooms.getRoom(code);
+    if (!current || current.state !== "guessing" || !current.assignment) return;
+
+    const ids = Object.keys(current.assignment);
+    const rajaId = ids.find((id) => current.assignment[id].name === "Raja");
+    const sipahiId = ids.find((id) => current.assignment[id].name === "Sipahi");
+    const candidates = ids.filter((id) => id !== rajaId && id !== sipahiId);
+    const randomPick = candidates[Math.floor(Math.random() * candidates.length)];
+
+    finishRound(current, randomPick, { timedOut: true });
+    broadcastRoom(current);
+  }, GUESS_TIME_MS);
 }
 
 io.on("connection", (socket) => {
@@ -121,6 +177,7 @@ io.on("connection", (socket) => {
     room.state = "guessing";
     room.round += 1;
     room.lastResult = null;
+    armGuessTimer(room, code);
 
     const rajaId = playerIds.find((id) => room.assignment[id].name === "Raja");
     const sipahiId = playerIds.find((id) => room.assignment[id].name === "Sipahi");
@@ -142,30 +199,7 @@ io.on("connection", (socket) => {
     );
     if (!entry || entry.playerId !== sipahiId) return cb?.({ ok: false, error: "Only Sipahi can guess" });
 
-    const { correct, chorId, roundPoints } = resolveGuess({
-      assignment: room.assignment,
-      guessedPlayerId: targetId,
-    });
-
-    for (const [pid, pts] of Object.entries(roundPoints)) {
-      const player = room.players.get(pid);
-      if (player) player.score += pts;
-    }
-
-    room.state = "result";
-    room.lastResult = {
-      correct,
-      roles: Object.fromEntries(
-        Object.entries(room.assignment).map(([id, r]) => [
-          id,
-          { role: r.name, nickname: room.players.get(id)?.nickname },
-        ])
-      ),
-      roundPoints,
-      chorNickname: room.players.get(chorId)?.nickname,
-    };
-    room.assignment = null;
-
+    finishRound(room, targetId);
     cb?.({ ok: true });
     broadcastRoom(room);
   });
@@ -191,11 +225,29 @@ io.on("connection", (socket) => {
     if (!room) return cb?.({ ok: false, error: "Room not found" });
     const entry = socketIndex.get(socket.id);
     if (!entry || room.hostId !== entry.playerId) return cb?.({ ok: false, error: "Only host can restart" });
+    clearGuessTimer(room);
     room.state = "lobby";
     room.round = 0;
     room.lastResult = null;
     room.assignment = null;
     for (const p of room.players.values()) p.score = 0;
+    cb?.({ ok: true });
+    broadcastRoom(room);
+  });
+
+  socket.on("room:kick", ({ code, targetId }, cb) => {
+    const room = rooms.getRoom(code);
+    if (!room) return cb?.({ ok: false, error: "Room not found" });
+    const entry = socketIndex.get(socket.id);
+    if (!entry || room.hostId !== entry.playerId)
+      return cb?.({ ok: false, error: "Only host can remove players" });
+    if (room.state !== "lobby")
+      return cb?.({ ok: false, error: "Can only remove players between rounds" });
+    const target = room.players.get(targetId);
+    if (!target) return cb?.({ ok: false, error: "Player not found" });
+    if (target.connected) return cb?.({ ok: false, error: "Can only remove disconnected players" });
+
+    rooms.removePlayer(room, targetId);
     cb?.({ ok: true });
     broadcastRoom(room);
   });

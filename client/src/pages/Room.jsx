@@ -1,13 +1,26 @@
+import { useState } from "react";
 import { socket } from "../socket.js";
+import { isMuted, setMuted } from "../sound.js";
 import PlayerList from "../components/PlayerList.jsx";
 import RoleCard from "../components/RoleCard.jsx";
 import GuessPanel from "../components/GuessPanel.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 import ResultPanel from "../components/ResultPanel.jsx";
+import Confetti from "../components/Confetti.jsx";
+import GuessTimer from "../components/GuessTimer.jsx";
+import ShareRoom from "../components/ShareRoom.jsx";
+import Podium from "../components/Podium.jsx";
 
 export default function RoomView({ roomState, playerId, myRole, error, setError, onLeave }) {
+  const [muted, setMutedState] = useState(isMuted());
   const isHost = roomState.hostId === playerId;
   const canStart = roomState.players.length === 4 && roomState.state === "lobby";
+
+  function toggleMute() {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  }
 
   function startRound() {
     setError("");
@@ -30,8 +43,20 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
     });
   }
 
+  function kickPlayer(targetId) {
+    setError("");
+    socket.emit("room:kick", { code: roomState.code, targetId }, (res) => {
+      if (!res?.ok) setError(res?.error || "Could not remove player");
+    });
+  }
+
+  const confettiKey =
+    roomState.state === "result" && roomState.lastResult?.correct ? `${roomState.round}-correct` : null;
+
   return (
     <div className="screen">
+      <Confetti burstKey={confettiKey} />
+
       <header className="room-header">
         <div>
           <span className="room-code-label">Room</span>
@@ -40,9 +65,14 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
         <div className="round-label">
           Round {Math.min(roomState.round, roomState.totalRounds)}/{roomState.totalRounds}
         </div>
-        <button className="btn btn-ghost" onClick={onLeave} type="button">
-          Leave
-        </button>
+        <div className="header-actions">
+          <button className="btn-icon" onClick={toggleMute} type="button" aria-label="Toggle sound">
+            {muted ? "🔇" : "🔊"}
+          </button>
+          <button className="btn btn-ghost" onClick={onLeave} type="button">
+            Leave
+          </button>
+        </div>
       </header>
 
       {error && <p className="error center-text">{error}</p>}
@@ -50,9 +80,18 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
       <main className="room-body">
         {roomState.state === "lobby" && (
           <>
-            <PlayerList players={roomState.players} hostId={roomState.hostId} you={playerId} />
+            <PlayerList
+              players={roomState.players}
+              hostId={roomState.hostId}
+              you={playerId}
+              isHost={isHost}
+              onKick={kickPlayer}
+            />
             {roomState.players.length < 4 && (
-              <p className="hint">Waiting for {4 - roomState.players.length} more player(s)… share code {roomState.code}</p>
+              <>
+                <p className="hint">Waiting for {4 - roomState.players.length} more player(s)…</p>
+                <ShareRoom code={roomState.code} />
+              </>
             )}
             {isHost && (
               <button className="btn btn-primary" disabled={!canStart} onClick={startRound}>
@@ -68,6 +107,7 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
         {roomState.state === "guessing" && myRole && (
           <>
             <RoleCard myRole={myRole} />
+            <GuessTimer deadline={roomState.guessDeadline} />
             {myRole.isSipahi ? (
               <GuessPanel code={roomState.code} candidates={myRole.candidates} setError={setError} />
             ) : (
@@ -78,7 +118,7 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
 
         {roomState.state === "result" && roomState.lastResult && (
           <>
-            <ResultPanel result={roomState.lastResult} players={roomState.players} />
+            <ResultPanel result={roomState.lastResult} players={roomState.players} round={roomState.round} />
             {isHost && (
               <button className="btn btn-primary" onClick={nextRound}>
                 {roomState.round >= roomState.totalRounds ? "See Final Leaderboard" : "Next Round"}
@@ -90,8 +130,8 @@ export default function RoomView({ roomState, playerId, myRole, error, setError,
 
         {roomState.state === "finished" && (
           <>
-            <h2 className="section-title">Final Leaderboard</h2>
-            <Scoreboard players={roomState.players} />
+            <h2 className="section-title center-text">Final Leaderboard</h2>
+            <Podium players={roomState.players} />
             {isHost && (
               <button className="btn btn-primary" onClick={playAgain}>
                 Play Again

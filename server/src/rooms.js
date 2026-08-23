@@ -59,6 +59,14 @@ export class RoomManager {
     });
   }
 
+  removePlayer(room, playerId) {
+    room.players.delete(playerId);
+    if (room.hostId === playerId) {
+      const next = room.players.keys().next().value;
+      room.hostId = next || null;
+    }
+  }
+
   // Reattaches an existing player (by their stable playerId) to a new socket
   // after a reconnect. Returns null if the player isn't part of this room.
   reconnectPlayer(room, playerId, socketId) {
@@ -86,6 +94,7 @@ export class RoomManager {
       state: room.state,
       round: room.round,
       totalRounds: room.totalRounds,
+      guessDeadline: room.guessDeadline || null,
       players: Array.from(room.players.values()).map((p) => ({
         id: p.id,
         nickname: p.nickname,

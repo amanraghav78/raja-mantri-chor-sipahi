@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-export default function Home({ onCreate, onJoin, error }) {
+export default function Home({ onCreate, onJoin, error, initialCode }) {
   const [nickname, setNickname] = useState("");
-  const [code, setCode] = useState("");
-  const [mode, setMode] = useState("create"); // create | join
+  const [code, setCode] = useState(initialCode || "");
+  const [mode, setMode] = useState(initialCode ? "join" : "create");
 
   function submit(e) {
     e.preventDefault();
@@ -50,6 +50,7 @@ export default function Home({ onCreate, onJoin, error }) {
               placeholder="e.g. Aman"
               maxLength={20}
               required
+              autoFocus
             />
           </label>
 
