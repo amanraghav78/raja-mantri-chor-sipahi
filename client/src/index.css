@@ -1,0 +1,374 @@
+:root {
+  --bg: #12121a;
+  --surface: #1c1c28;
+  --surface-2: #262636;
+  --text: #f2f2f7;
+  --text-dim: #9a9aab;
+  --accent: #f5b942;
+  --accent-2: #e0722f;
+  --correct: #4caf7d;
+  --wrong: #e05a5a;
+  --raja: #f5b942;
+  --mantri: #7aa5f0;
+  --sipahi: #4caf7d;
+  --chor: #e05a5a;
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  margin: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.title {
+  font-size: 1.6rem;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  color: var(--text-dim);
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.tabs {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tab-active {
+  background: var(--accent);
+  color: #1a1a1a;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.field input {
+  background: var(--surface-2);
+  border: 1px solid #34344a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: 2px solid var(--accent);
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #1a1a1a;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--text);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  padding: 8px 12px;
+}
+
+.error {
+  color: var(--wrong);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.center-text {
+  text-align: center;
+}
+
+.room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.room-code-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.room-code {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.round-label {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.room-body {
+  flex: 1;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.player-list,
+.scoreboard,
+.reveal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-row,
+.score-row,
+.reveal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.player-row-empty {
+  color: var(--text-dim);
+  border: 1px dashed #34344a;
+  background: transparent;
+}
+
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.tag {
+  font-size: 0.65rem;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.tag-host {
+  background: var(--accent);
+  color: #1a1a1a;
+}
+
+.tag-warn {
+  color: var(--wrong);
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.role-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 32px 16px;
+  text-align: center;
+  border: 2px solid var(--surface-2);
+}
+
+.role-emoji {
+  font-size: 3rem;
+}
+
+.role-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.role-points {
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.role-raja-line {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.role-raja .role-name { color: var(--raja); }
+.role-mantri .role-name { color: var(--mantri); }
+.role-sipahi .role-name { color: var(--sipahi); }
+.role-chor .role-name { color: var(--chor); }
+
+.guess-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guess-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guess-btn {
+  width: 100%;
+}
+
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-headline {
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.result-correct {
+  color: var(--correct);
+}
+
+.result-wrong {
+  color: var(--wrong);
+}
+
+.reveal-role {
+  font-weight: 700;
+  width: 70px;
+}
+
+.reveal-name {
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.reveal-points {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.score-rank {
+  color: var(--text-dim);
+  width: 30px;
+}
+
+.score-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.score-value {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+@media (min-width: 480px) {
+  .screen {
+    padding: 24px;
+  }
+}
