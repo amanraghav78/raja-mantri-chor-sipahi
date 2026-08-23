@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function generateCode(length = 5) {
@@ -6,6 +8,10 @@ function generateCode(length = 5) {
     code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   }
   return code;
+}
+
+export function generatePlayerId() {
+  return crypto.randomUUID();
 }
 
 export class RoomManager {
@@ -21,9 +27,9 @@ export class RoomManager {
 
     const room = {
       code,
-      hostId: null,
-      players: new Map(), // socketId -> { id, nickname, score, connected }
-      state: "lobby", // lobby | reveal | guessing | result
+      hostId: null, // playerId
+      players: new Map(), // playerId -> { id, nickname, score, connected, socketId }
+      state: "lobby", // lobby | guessing | result | finished
       totalRounds: 5,
       round: 0,
       assignment: null,
@@ -42,22 +48,35 @@ export class RoomManager {
     this.rooms.delete(code);
   }
 
-  addPlayer(room, socketId, nickname) {
-    if (!room.hostId) room.hostId = socketId;
-    room.players.set(socketId, {
-      id: socketId,
+  addPlayer(room, playerId, socketId, nickname) {
+    if (!room.hostId) room.hostId = playerId;
+    room.players.set(playerId, {
+      id: playerId,
       nickname,
       score: 0,
       connected: true,
+      socketId,
     });
   }
 
-  removePlayer(room, socketId) {
-    room.players.delete(socketId);
-    if (room.hostId === socketId) {
-      const next = room.players.keys().next().value;
-      room.hostId = next || null;
-    }
+  // Reattaches an existing player (by their stable playerId) to a new socket
+  // after a reconnect. Returns null if the player isn't part of this room.
+  reconnectPlayer(room, playerId, socketId) {
+    const player = room.players.get(playerId);
+    if (!player) return null;
+    player.connected = true;
+    player.socketId = socketId;
+    return player;
+  }
+
+  markDisconnected(room, playerId) {
+    const player = room.players.get(playerId);
+    if (player) player.connected = false;
+  }
+
+  allDisconnected(room) {
+    if (room.players.size === 0) return true;
+    return Array.from(room.players.values()).every((p) => !p.connected);
   }
 
   publicState(room) {

@@ -2,12 +2,13 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { RoomManager } from "./rooms.js";
+import { RoomManager, generatePlayerId } from "./rooms.js";
 import { assignRoles, resolveGuess } from "./gameLogic.js";
 
 const PORT = process.env.PORT || 4000;
 const ORIGIN = process.env.CLIENT_ORIGIN || "*";
 const MAX_PLAYERS = 4;
+const DISCONNECTED_ROOM_TTL_MS = 5 * 60 * 1000;
 
 const app = express();
 app.use(cors({ origin: ORIGIN }));
@@ -19,25 +20,52 @@ const io = new Server(httpServer, {
 });
 
 const rooms = new RoomManager();
+const socketIndex = new Map(); // socket.id -> { code, playerId }
 
 function broadcastRoom(room) {
   io.to(room.code).emit("room:update", rooms.publicState(room));
 }
 
-function findRoomBySocket(socketId) {
-  for (const room of rooms.rooms.values()) {
-    if (room.players.has(socketId)) return room;
+function emitToPlayer(room, playerId, event, payload) {
+  const player = room.players.get(playerId);
+  if (player?.connected && player.socketId) {
+    io.to(player.socketId).emit(event, payload);
   }
-  return null;
+}
+
+function roleAssignedPayload(room, playerIds, rajaId, sipahiId, playerId) {
+  return {
+    role: room.assignment[playerId].name,
+    points: room.assignment[playerId].points,
+    raja: { id: rajaId, nickname: room.players.get(rajaId).nickname },
+    isSipahi: playerId === sipahiId,
+    candidates:
+      playerId === sipahiId
+        ? playerIds
+            .filter((pid) => pid !== rajaId && pid !== sipahiId)
+            .map((pid) => ({ id: pid, nickname: room.players.get(pid).nickname }))
+        : [],
+  };
+}
+
+function scheduleRoomSweep(code) {
+  setTimeout(() => {
+    const room = rooms.getRoom(code);
+    if (room && rooms.allDisconnected(room)) {
+      rooms.deleteRoom(code);
+    }
+  }, DISCONNECTED_ROOM_TTL_MS);
 }
 
 io.on("connection", (socket) => {
   socket.on("room:create", ({ nickname }, cb) => {
     const name = (nickname || "").trim().slice(0, 20) || "Player";
     const room = rooms.createRoom();
+    const playerId = generatePlayerId();
     socket.join(room.code);
-    rooms.addPlayer(room, socket.id, name);
-    cb?.({ ok: true, code: room.code, playerId: socket.id });
+    rooms.addPlayer(room, playerId, socket.id, name);
+    socketIndex.set(socket.id, { code: room.code, playerId });
+    cb?.({ ok: true, code: room.code, playerId });
     broadcastRoom(room);
   });
 
@@ -48,16 +76,43 @@ io.on("connection", (socket) => {
     if (room.players.size >= MAX_PLAYERS) return cb?.({ ok: false, error: "Room is full" });
 
     const name = (nickname || "").trim().slice(0, 20) || "Player";
+    const playerId = generatePlayerId();
     socket.join(room.code);
-    rooms.addPlayer(room, socket.id, name);
-    cb?.({ ok: true, code: room.code, playerId: socket.id });
+    rooms.addPlayer(room, playerId, socket.id, name);
+    socketIndex.set(socket.id, { code: room.code, playerId });
+    cb?.({ ok: true, code: room.code, playerId });
     broadcastRoom(room);
+  });
+
+  socket.on("room:rejoin", ({ code, playerId }, cb) => {
+    const room = rooms.getRoom(code);
+    if (!room) return cb?.({ ok: false, error: "Room not found" });
+    const player = rooms.reconnectPlayer(room, playerId, socket.id);
+    if (!player) return cb?.({ ok: false, error: "Could not rejoin room" });
+
+    socket.join(room.code);
+    socketIndex.set(socket.id, { code: room.code, playerId });
+    cb?.({ ok: true, code: room.code, playerId });
+    broadcastRoom(room);
+
+    if (room.state === "guessing" && room.assignment?.[playerId]) {
+      const playerIds = Array.from(room.players.keys());
+      const rajaId = playerIds.find((id) => room.assignment[id].name === "Raja");
+      const sipahiId = playerIds.find((id) => room.assignment[id].name === "Sipahi");
+      emitToPlayer(
+        room,
+        playerId,
+        "role:assigned",
+        roleAssignedPayload(room, playerIds, rajaId, sipahiId, playerId)
+      );
+    }
   });
 
   socket.on("room:start", ({ code }, cb) => {
     const room = rooms.getRoom(code);
     if (!room) return cb?.({ ok: false, error: "Room not found" });
-    if (room.hostId !== socket.id) return cb?.({ ok: false, error: "Only host can start" });
+    const entry = socketIndex.get(socket.id);
+    if (!entry || room.hostId !== entry.playerId) return cb?.({ ok: false, error: "Only host can start" });
     if (room.players.size !== MAX_PLAYERS)
       return cb?.({ ok: false, error: `Need exactly ${MAX_PLAYERS} players` });
 
@@ -68,22 +123,10 @@ io.on("connection", (socket) => {
     room.lastResult = null;
 
     const rajaId = playerIds.find((id) => room.assignment[id].name === "Raja");
-    const rajaName = room.players.get(rajaId).nickname;
     const sipahiId = playerIds.find((id) => room.assignment[id].name === "Sipahi");
 
     for (const id of playerIds) {
-      io.to(id).emit("role:assigned", {
-        role: room.assignment[id].name,
-        points: room.assignment[id].points,
-        raja: { id: rajaId, nickname: rajaName },
-        isSipahi: id === sipahiId,
-        candidates:
-          id === sipahiId
-            ? playerIds
-                .filter((pid) => pid !== rajaId && pid !== sipahiId)
-                .map((pid) => ({ id: pid, nickname: room.players.get(pid).nickname }))
-            : [],
-      });
+      emitToPlayer(room, id, "role:assigned", roleAssignedPayload(room, playerIds, rajaId, sipahiId, id));
     }
 
     cb?.({ ok: true });
@@ -93,10 +136,11 @@ io.on("connection", (socket) => {
   socket.on("round:guess", ({ code, targetId }, cb) => {
     const room = rooms.getRoom(code);
     if (!room || !room.assignment) return cb?.({ ok: false, error: "No active round" });
+    const entry = socketIndex.get(socket.id);
     const sipahiId = Object.keys(room.assignment).find(
       (id) => room.assignment[id].name === "Sipahi"
     );
-    if (socket.id !== sipahiId) return cb?.({ ok: false, error: "Only Sipahi can guess" });
+    if (!entry || entry.playerId !== sipahiId) return cb?.({ ok: false, error: "Only Sipahi can guess" });
 
     const { correct, chorId, roundPoints } = resolveGuess({
       assignment: room.assignment,
@@ -129,14 +173,15 @@ io.on("connection", (socket) => {
   socket.on("round:next", ({ code }, cb) => {
     const room = rooms.getRoom(code);
     if (!room) return cb?.({ ok: false, error: "Room not found" });
-    if (room.hostId !== socket.id) return cb?.({ ok: false, error: "Only host can continue" });
+    const entry = socketIndex.get(socket.id);
+    if (!entry || room.hostId !== entry.playerId) return cb?.({ ok: false, error: "Only host can continue" });
 
     if (room.round >= room.totalRounds) {
       room.state = "finished";
     } else {
       room.state = "lobby";
+      room.lastResult = null;
     }
-    room.lastResult = room.state === "finished" ? room.lastResult : null;
     cb?.({ ok: true });
     broadcastRoom(room);
   });
@@ -144,7 +189,8 @@ io.on("connection", (socket) => {
   socket.on("room:playAgain", ({ code }, cb) => {
     const room = rooms.getRoom(code);
     if (!room) return cb?.({ ok: false, error: "Room not found" });
-    if (room.hostId !== socket.id) return cb?.({ ok: false, error: "Only host can restart" });
+    const entry = socketIndex.get(socket.id);
+    if (!entry || room.hostId !== entry.playerId) return cb?.({ ok: false, error: "Only host can restart" });
     room.state = "lobby";
     room.round = 0;
     room.lastResult = null;
@@ -155,13 +201,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    const room = findRoomBySocket(socket.id);
+    const entry = socketIndex.get(socket.id);
+    socketIndex.delete(socket.id);
+    if (!entry) return;
+    const room = rooms.getRoom(entry.code);
     if (!room) return;
-    rooms.removePlayer(room, socket.id);
-    if (room.players.size === 0) {
-      rooms.deleteRoom(room.code);
-    } else {
-      broadcastRoom(room);
+
+    rooms.markDisconnected(room, entry.playerId);
+    broadcastRoom(room);
+    if (rooms.allDisconnected(room)) {
+      scheduleRoomSweep(room.code);
     }
   });
 });
