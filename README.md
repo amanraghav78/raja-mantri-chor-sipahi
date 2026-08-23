@@ -1,36 +1,52 @@
 # Raja Mantri Chor Sipahi — Online
 
-4-player real-time version of the classic Indian guessing game, built with Node/Express/Socket.io and React (Vite).
+The classic 4-player Indian party game, playable in any browser. Node/Express/Socket.io backend, React (Vite) frontend, no accounts and no database.
 
 ## Run locally
 
-**1. Backend**
+**Backend**
 ```
 cd server
 npm install
-npm run dev
+npm run dev      # http://localhost:4000
 ```
-Server runs on http://localhost:4000
 
-**2. Frontend** (new terminal)
+**Frontend** (separate terminal)
 ```
 cd client
 npm install
-npm run dev
+npm run dev      # http://localhost:5173
 ```
-Client runs on http://localhost:5173
 
-Open the client URL in 4 browser tabs (or 4 phones on the same network, using your PC's LAN IP instead of localhost) to play a full round.
+Open the client in 4 browser tabs — or on 4 phones using your machine's LAN IP — to play a full game.
 
 ## How it plays
-- Host creates a room and shares the 5-letter code.
-- 3 more players join with the code + a nickname.
-- Host starts the round once 4 players are in — roles (Raja 1000, Mantri 800, Sipahi 500, Chor 0) are dealt at random.
-- Everyone sees only their own role; the Raja is revealed to the table automatically.
-- The Sipahi picks who they think the Chor is between the two remaining unrevealed players.
-- Correct guess: points stand. Wrong guess: Sipahi and Chor swap points.
-- Scores accumulate over 5 rounds (edit `totalRounds` in `server/src/rooms.js` to change), then a final leaderboard is shown and the host can start a new game.
+
+- The host creates a room and shares the 5-character code, a link, or a QR code.
+- Three more players join. Once the room is full the host starts the round.
+- Roles are dealt at random: **Raja** 1000, **Mantri** 800, **Sipahi** 500, **Chor** 0.
+- Everyone taps their face-down card to reveal their own role. The Raja is announced to the table.
+- The Sipahi picks which of the two hidden players is the Chor, then locks the guess in.
+- Correct: everyone keeps their role's points. Wrong: the Sipahi's 500 goes to the Chor (configurable).
+- Scores accumulate; after the final round a winner is crowned.
+
+## Settings
+
+Per-player (this device only): sound &amp; vibration, dark/light theme, nickname, avatar.
+
+Host-only (applies to the room, changeable between rounds): rounds per game (3/5/10), whether a
+wrong guess swaps points, and whether the 30-second guess timer is on.
+
+## Reconnects and edge cases
+
+- Each player holds a stable id in `localStorage`, so a refresh or a dropped connection rejoins the
+  same room and role instead of removing the player.
+- If the host disconnects, the host role passes to a connected player so the game can continue.
+- The host can remove a player who is offline in the lobby, freeing the seat for someone else.
+- Rooms are cleaned up five minutes after the last player disconnects.
 
 ## Deploying
-- Frontend → Vercel (set `VITE_SERVER_URL` env var to your deployed backend URL).
-- Backend → Render/Railway (set `CLIENT_ORIGIN` env var to your deployed frontend URL for CORS).
+
+- **Frontend → Vercel.** Root directory `client`, env var `VITE_SERVER_URL` set to the backend URL.
+- **Backend → Render.** `render.yaml` in the repo root is a ready blueprint; set `CLIENT_ORIGIN` to
+  the exact frontend origin, with no trailing slash (a trailing slash breaks CORS).

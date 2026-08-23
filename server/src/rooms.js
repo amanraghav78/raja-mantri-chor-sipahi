@@ -2,6 +2,8 @@ import crypto from "crypto";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+export const AVATARS = ["🦁", "🐯", "🦅", "🐘", "🦚", "🐅", "🦌", "🐍", "🦂", "🐊"];
+
 function generateCode(length = 5) {
   let code = "";
   for (let i = 0; i < length; i++) {
@@ -12,6 +14,10 @@ function generateCode(length = 5) {
 
 export function generatePlayerId() {
   return crypto.randomUUID();
+}
+
+export function sanitizeNickname(nickname) {
+  return (nickname || "").trim().replace(/\s+/g, " ").slice(0, 16);
 }
 
 export class RoomManager {
@@ -28,12 +34,17 @@ export class RoomManager {
     const room = {
       code,
       hostId: null, // playerId
-      players: new Map(), // playerId -> { id, nickname, score, connected, socketId }
+      players: new Map(), // playerId -> { id, nickname, avatar, score, connected, socketId }
       state: "lobby", // lobby | guessing | result | finished
-      totalRounds: 5,
       round: 0,
+      settings: {
+        totalRounds: 5,
+        swapOnWrongGuess: true,
+        timerEnabled: true,
+      },
       assignment: null,
       lastResult: null,
+      history: [],
       createdAt: Date.now(),
     };
     this.rooms.set(code, room);
@@ -48,11 +59,18 @@ export class RoomManager {
     this.rooms.delete(code);
   }
 
+  // Picks the first avatar nobody in the room has taken yet.
+  nextAvatar(room) {
+    const taken = new Set(Array.from(room.players.values()).map((p) => p.avatar));
+    return AVATARS.find((a) => !taken.has(a)) || AVATARS[0];
+  }
+
   addPlayer(room, playerId, socketId, nickname) {
     if (!room.hostId) room.hostId = playerId;
     room.players.set(playerId, {
       id: playerId,
       nickname,
+      avatar: this.nextAvatar(room),
       score: 0,
       connected: true,
       socketId,
@@ -61,10 +79,14 @@ export class RoomManager {
 
   removePlayer(room, playerId) {
     room.players.delete(playerId);
-    if (room.hostId === playerId) {
-      const next = room.players.keys().next().value;
-      room.hostId = next || null;
-    }
+    if (room.hostId === playerId) this.reassignHost(room);
+  }
+
+  // Hands the host role to any still-connected player so the game can't
+  // stall when the host closes their tab mid-game.
+  reassignHost(room) {
+    const connected = Array.from(room.players.values()).find((p) => p.connected);
+    room.hostId = connected ? connected.id : room.players.keys().next().value || null;
   }
 
   // Reattaches an existing player (by their stable playerId) to a new socket
@@ -93,15 +115,18 @@ export class RoomManager {
       hostId: room.hostId,
       state: room.state,
       round: room.round,
-      totalRounds: room.totalRounds,
+      totalRounds: room.settings.totalRounds,
+      settings: { ...room.settings },
       guessDeadline: room.guessDeadline || null,
       players: Array.from(room.players.values()).map((p) => ({
         id: p.id,
         nickname: p.nickname,
+        avatar: p.avatar,
         score: p.score,
         connected: p.connected,
       })),
       lastResult: room.lastResult,
+      history: room.history,
     };
   }
 }

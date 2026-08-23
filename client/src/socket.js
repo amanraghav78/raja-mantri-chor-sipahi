@@ -4,4 +4,9 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:4000";
 
 export const socket = io(SERVER_URL, {
   autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 600,
+  reconnectionDelayMax: 4000,
+  timeout: 12000,
 });

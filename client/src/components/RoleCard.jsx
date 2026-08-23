@@ -1,37 +1,55 @@
 import { useEffect, useState } from "react";
-import { playReveal, vibrate } from "../sound.js";
-
-const ROLE_META = {
-  Raja: { emoji: "👑", color: "role-raja" },
-  Mantri: { emoji: "🧠", color: "role-mantri" },
-  Sipahi: { emoji: "🛡️", color: "role-sipahi" },
-  Chor: { emoji: "🥷", color: "role-chor" },
-};
+import { Crown } from "lucide-react";
+import { ROLE_CONFIG } from "../roles.js";
+import { playFlip, playReveal, vibrate } from "../sound.js";
 
 export default function RoleCard({ myRole }) {
-  const [flipped, setFlipped] = useState(false);
-  const meta = ROLE_META[myRole.role] || {};
+  const [revealed, setRevealed] = useState(false);
+  const cfg = ROLE_CONFIG[myRole.role] || {};
+  const Icon = cfg.icon;
 
+  // A fresh role means a fresh round — flip the card back face-down.
   useEffect(() => {
-    setFlipped(false);
+    setRevealed(false);
+  }, [myRole.role, myRole.raja?.id]);
+
+  function reveal() {
+    if (revealed) return;
+    playFlip();
+    setRevealed(true);
     playReveal();
     vibrate(myRole.role === "Chor" ? [40, 60, 40] : 60);
-    const t = setTimeout(() => setFlipped(true), 120);
-    return () => clearTimeout(t);
-  }, [myRole.role]);
+  }
 
   return (
-    <div className={`role-flip ${flipped ? "role-flip-active" : ""}`}>
+    <div className={`role-stage ${revealed ? "role-flip-active" : ""}`}>
       <div className="role-flip-inner">
-        <div className="role-card role-card-back">
-          <div className="role-back-mark">?</div>
-        </div>
-        <div className={`role-card role-card-front ${meta.color || ""}`}>
-          <div className="role-emoji">{meta.emoji}</div>
+        <button
+          type="button"
+          className="role-face role-face-back"
+          onClick={reveal}
+          aria-label="Tap to reveal your role"
+        >
+          <div className="role-back-crest">👑</div>
+          <div className="role-back-label">Tap to reveal</div>
+          <p className="hint" style={{ fontSize: "0.8rem" }}>
+            Keep your screen to yourself
+          </p>
+        </button>
+
+        <div className={`role-face role-face-front ${cfg.className || ""}`}>
+          {Icon && (
+            <div className="role-icon-ring">
+              <Icon size={38} />
+            </div>
+          )}
           <div className="role-name">{myRole.role}</div>
+          <div className="role-translation">{cfg.translation}</div>
           <div className="role-points">{myRole.points} pts</div>
+          <p className="role-brief">{cfg.brief}</p>
           <div className="role-raja-line">
-            👑 Raja is <strong>{myRole.raja.nickname}</strong>
+            <Crown size={15} style={{ color: "var(--raja)" }} />
+            Raja is <strong>{myRole.raja.nickname}</strong>
           </div>
         </div>
       </div>

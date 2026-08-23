@@ -23,7 +23,7 @@ export function assignRoles(playerIds) {
   return assignment;
 }
 
-export function resolveGuess({ assignment, guessedPlayerId }) {
+export function resolveGuess({ assignment, guessedPlayerId, swapOnWrongGuess = true }) {
   const chorId = Object.keys(assignment).find((id) => assignment[id].name === "Chor");
   const sipahiId = Object.keys(assignment).find((id) => assignment[id].name === "Sipahi");
   const correct = guessedPlayerId === chorId;
@@ -34,9 +34,10 @@ export function resolveGuess({ assignment, guessedPlayerId }) {
   }
 
   if (!correct) {
-    // wrong guess: Sipahi and Chor swap points (house rule, default on)
+    // House rule: either the Sipahi's 500 transfers to the Chor, or the
+    // Sipahi simply loses their points and the Chor still gets nothing.
     roundPoints[sipahiId] = 0;
-    roundPoints[chorId] = 500;
+    if (swapOnWrongGuess) roundPoints[chorId] = 500;
   }
 
   return { correct, chorId, sipahiId, roundPoints };

@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Timer } from "lucide-react";
 import { playTick } from "../sound.js";
 
+const TOTAL_MS = 30000;
+
 export default function GuessTimer({ deadline }) {
-  const [remaining, setRemaining] = useState(() =>
-    deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : null
-  );
+  const [remaining, setRemaining] = useState(null);
+  const lastTickRef = useRef(null);
 
   useEffect(() => {
     if (!deadline) {
@@ -12,22 +14,34 @@ export default function GuessTimer({ deadline }) {
       return;
     }
     const tick = () => {
-      const secs = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setRemaining((prev) => {
-        if (secs <= 5 && secs > 0 && secs !== prev) playTick();
-        return secs;
-      });
+      const ms = Math.max(0, deadline - Date.now());
+      const secs = Math.ceil(ms / 1000);
+      if (secs <= 5 && secs > 0 && lastTickRef.current !== secs) {
+        lastTickRef.current = secs;
+        playTick();
+      }
+      setRemaining(ms);
     };
     tick();
-    const interval = setInterval(tick, 250);
+    const interval = setInterval(tick, 200);
     return () => clearInterval(interval);
   }, [deadline]);
 
   if (remaining === null) return null;
 
+  const secs = Math.ceil(remaining / 1000);
+  const urgent = secs <= 5;
+  const pct = Math.max(0, Math.min(100, (remaining / TOTAL_MS) * 100));
+
   return (
-    <div className={`guess-timer ${remaining <= 5 ? "guess-timer-urgent" : ""}`}>
-      {remaining > 0 ? `${remaining}s left` : "Time's up…"}
+    <div>
+      <div className={`guess-timer ${urgent ? "guess-timer-urgent" : ""}`}>
+        <Timer size={16} />
+        {secs > 0 ? `${secs}s to decide` : "Time's up"}
+      </div>
+      <div className="timer-track">
+        <div className="timer-fill" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
