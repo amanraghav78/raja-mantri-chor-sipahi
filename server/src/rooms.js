@@ -4,6 +4,8 @@ const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export const AVATARS = ["🦁", "🐯", "🦅", "🐘", "🦚", "🐅", "🦌", "🐍", "🦂", "🐊"];
 
+const BOT_NAMES = ["Arjun", "Meera", "Kabir", "Diya", "Rohan", "Ira"];
+
 function generateCode(length = 5) {
   let code = "";
   for (let i = 0; i < length; i++) {
@@ -34,7 +36,7 @@ export class RoomManager {
     const room = {
       code,
       hostId: null, // playerId
-      players: new Map(), // playerId -> { id, nickname, avatar, score, connected, socketId }
+      players: new Map(), // playerId -> { id, nickname, avatar, score, connected, socketId, isBot }
       state: "lobby", // lobby | guessing | result | finished
       round: 0,
       settings: {
@@ -43,6 +45,7 @@ export class RoomManager {
         timerEnabled: true,
       },
       assignment: null,
+      previousRoles: null,
       lastResult: null,
       history: [],
       createdAt: Date.now(),
@@ -74,7 +77,24 @@ export class RoomManager {
       score: 0,
       connected: true,
       socketId,
+      isBot: false,
     });
+  }
+
+  addBot(room) {
+    const taken = new Set(Array.from(room.players.values()).map((p) => p.nickname));
+    const name = BOT_NAMES.find((n) => !taken.has(n)) || `Bot ${room.players.size + 1}`;
+    const id = generatePlayerId();
+    room.players.set(id, {
+      id,
+      nickname: name,
+      avatar: this.nextAvatar(room),
+      score: 0,
+      connected: true,
+      socketId: null,
+      isBot: true,
+    });
+    return id;
   }
 
   removePlayer(room, playerId) {
@@ -82,18 +102,19 @@ export class RoomManager {
     if (room.hostId === playerId) this.reassignHost(room);
   }
 
-  // Hands the host role to any still-connected player so the game can't
-  // stall when the host closes their tab mid-game.
+  // Hands the host role to any still-connected human so the game can't
+  // stall when the host closes their tab mid-game. Bots never host.
   reassignHost(room) {
-    const connected = Array.from(room.players.values()).find((p) => p.connected);
-    room.hostId = connected ? connected.id : room.players.keys().next().value || null;
+    const human = Array.from(room.players.values()).find((p) => !p.isBot && p.connected);
+    const anyHuman = Array.from(room.players.values()).find((p) => !p.isBot);
+    room.hostId = (human || anyHuman)?.id || null;
   }
 
   // Reattaches an existing player (by their stable playerId) to a new socket
   // after a reconnect. Returns null if the player isn't part of this room.
   reconnectPlayer(room, playerId, socketId) {
     const player = room.players.get(playerId);
-    if (!player) return null;
+    if (!player || player.isBot) return null;
     player.connected = true;
     player.socketId = socketId;
     return player;
@@ -104,9 +125,11 @@ export class RoomManager {
     if (player) player.connected = false;
   }
 
+  // Bots don't count as presence — a room holding only bots is abandoned.
   allDisconnected(room) {
-    if (room.players.size === 0) return true;
-    return Array.from(room.players.values()).every((p) => !p.connected);
+    const humans = Array.from(room.players.values()).filter((p) => !p.isBot);
+    if (humans.length === 0) return true;
+    return humans.every((p) => !p.connected);
   }
 
   publicState(room) {
@@ -124,6 +147,7 @@ export class RoomManager {
         avatar: p.avatar,
         score: p.score,
         connected: p.connected,
+        isBot: p.isBot,
       })),
       lastResult: room.lastResult,
       history: room.history,

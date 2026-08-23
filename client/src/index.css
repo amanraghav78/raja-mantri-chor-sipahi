@@ -5,17 +5,11 @@
 
 :root {
   /* Brand constants (identical in both themes) */
-  --gold: #d4a017;
-  --gold-bright: #f0c04a;
-  --royal: #6b3fa0;
-  --maroon: #a32638;
-  --emerald: #1f8a5f;
-
-  /* Role identity */
-  --raja: #d4a017;
-  --mantri: #7a4fbf;
-  --sipahi: #1f8a5f;
-  --chor: #a32638;
+  --gold: #c98a3c;
+  --gold-bright: #e3ac5a;
+  --brass: #d89a4c;
+  --maroon: #8e1d2c;
+  --emerald: #3f7d58;
 
   --radius-sm: 10px;
   --radius: 16px;
@@ -32,39 +26,51 @@
   --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
 
-/* ---- Light theme (warm parchment) ---- */
+/* ---- Dark theme, "haveli at night" — the default ---- */
 :root,
-[data-theme="light"] {
-  --bg: #f4ece0;
-  --bg-glow: radial-gradient(circle at 50% 0%, #ffe9bd 0%, transparent 55%);
-  --surface: #fffcf6;
-  --surface-2: #f0e5d4;
-  --surface-3: #e6d8c2;
-  --border: #ddcdb2;
-  --text: #2c1a3d;
-  --text-dim: #7a6a80;
-  --accent: #a8790c;
-  --accent-contrast: #ffffff;
-  --correct: #1f8a5f;
-  --wrong: #a32638;
-  --overlay: rgba(44, 26, 61, 0.45);
+[data-theme="dark"] {
+  --bg: #1f0c10;
+  --bg-glow: radial-gradient(circle at 50% 0%, #5c2029 0%, transparent 55%);
+  --surface: #2e1318;
+  --surface-2: #3d1b21;
+  --surface-3: #4f252c;
+  --border: #5e2f37;
+  --text: #f7e9e4;
+  --text-dim: #c4a099;
+  --accent: #d89a4c;
+  --accent-contrast: #2a1408;
+  --correct: #4fb585;
+  --wrong: #ff7b84;
+  --overlay: rgba(12, 4, 6, 0.68);
+
+  /* Role identity — the Chor is deliberately brighter than the maroon
+     ground so it still reads as an alarm rather than blending in. */
+  --raja: #c98a3c;
+  --mantri: #6b8fd4;
+  --sipahi: #4e9e70;
+  --chor: #c43346;
 }
 
-/* ---- Dark theme (midnight durbar) ---- */
-[data-theme="dark"] {
-  --bg: #180d29;
-  --bg-glow: radial-gradient(circle at 50% 0%, #3a1f5c 0%, transparent 55%);
-  --surface: #241640;
-  --surface-2: #2f1d52;
-  --surface-3: #3d2766;
-  --border: #4a3070;
-  --text: #f5eeff;
-  --text-dim: #a693c4;
-  --accent: #f0c04a;
-  --accent-contrast: #24160a;
-  --correct: #3fce93;
-  --wrong: #ff6b7a;
-  --overlay: rgba(10, 5, 20, 0.65);
+/* ---- Light theme, "sandstone daylight" ---- */
+[data-theme="light"] {
+  --bg: #f6ede3;
+  --bg-glow: radial-gradient(circle at 50% 0%, #ffd9b8 0%, transparent 55%);
+  --surface: #fff9f2;
+  --surface-2: #f2e4d6;
+  --surface-3: #e8d5c3;
+  --border: #dcc5b0;
+  --text: #33161a;
+  --text-dim: #856a63;
+  --accent: #9a5b1e;
+  --accent-contrast: #ffffff;
+  --correct: #3f7d58;
+  --wrong: #8e1d2c;
+  --overlay: rgba(51, 22, 26, 0.45);
+
+  --raja: #a86b22;
+  --mantri: #4a6fa5;
+  --sipahi: #3f7d58;
+  --chor: #8e1d2c;
 }
 
 * {
@@ -515,6 +521,37 @@ button {
   background: transparent;
 }
 
+.tag-bot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mantri);
+  border: 1px solid var(--mantri);
+  background: transparent;
+}
+
+.seat-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 8px;
+  transition: color var(--dur) var(--ease);
+}
+
+.seat-add:hover {
+  color: var(--accent);
+}
+
 /* ==========================  Role reveal  ========================== */
 
 .role-stage {
@@ -556,7 +593,7 @@ button {
 .role-face-back {
   cursor: pointer;
   background:
-    repeating-linear-gradient(45deg, transparent 0 12px, rgba(212, 160, 23, 0.06) 12px 24px),
+    repeating-linear-gradient(45deg, transparent 0 12px, rgba(216, 154, 76, 0.07) 12px 24px),
     var(--surface);
   border-color: var(--gold);
 }
@@ -834,7 +871,7 @@ button {
 
 .score-leader {
   border-color: var(--gold);
-  background: linear-gradient(90deg, rgba(212, 160, 23, 0.12), transparent 60%), var(--surface);
+  background: linear-gradient(90deg, rgba(216, 154, 76, 0.14), transparent 60%), var(--surface);
 }
 
 .score-rank {
@@ -965,7 +1002,7 @@ button {
 
 .podium-1 .podium-bar { height: 88px; background: linear-gradient(180deg, var(--gold-bright), var(--gold)); }
 .podium-2 .podium-bar { height: 62px; background: var(--mantri); color: #fff; }
-.podium-3 .podium-bar { height: 44px; background: var(--sipahi); color: #fff; }
+.podium-3 .podium-bar { height: 44px; background: var(--emerald); color: #fff; }
 .podium-4 .podium-bar { height: 30px; }
 
 /* ==========================  Share  ========================== */

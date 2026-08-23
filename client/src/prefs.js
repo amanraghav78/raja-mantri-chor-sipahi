@@ -20,12 +20,12 @@ function write(key, value) {
   }
 }
 
+// Dark is the deliberate default — this gets played at night and at parties.
+// A player's explicit choice is remembered and always wins.
 export function getTheme() {
   const stored = read(THEME_KEY, null);
   if (stored === "light" || stored === "dark") return stored;
-  const prefersLight =
-    typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)").matches;
-  return prefersLight ? "light" : "dark";
+  return "dark";
 }
 
 export function applyTheme(theme) {

@@ -30,9 +30,24 @@ Open the client in 4 browser tabs — or on 4 phones using your machine's LAN IP
 - Correct: everyone keeps their role's points. Wrong: the Sipahi's 500 goes to the Chor (configurable).
 - Scores accumulate; after the final round a winner is crowned.
 
+## Playing with fewer than four people
+
+You need four seats filled, but not four humans. The host can drop a bot into any empty seat from
+the lobby. Bots take roles like anyone else, and a bot that draws Sipahi pauses for a beat and then
+makes its own guess. The host can remove a bot at any point between rounds to free the seat.
+
+## Role dealing
+
+Roles are dealt at random, but never the same role twice in a row for the same player. A plain
+independent shuffle is uniformly fair and still repeats someone's role a quarter of the time, which
+reads as broken at the table. The deal is retried until nobody repeats, which keeps the long-run
+distribution even (~25% per role per player) while removing the streaks people notice. The
+constraint carries across "play again" too, since the table experiences those rounds back to back.
+
 ## Settings
 
 Per-player (this device only): sound &amp; vibration, dark/light theme, nickname, avatar.
+Dark is the default regardless of the device's system theme.
 
 Host-only (applies to the room, changeable between rounds): rounds per game (3/5/10), whether a
 wrong guess swaps points, and whether the 30-second guess timer is on.

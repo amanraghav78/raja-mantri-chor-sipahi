@@ -32,6 +32,7 @@ export default function RoomView({
 }) {
   const isHost = roomState.hostId === playerId;
   const full = roomState.players.length === 4;
+  const seatsLeft = 4 - roomState.players.length;
   const canStart = full && roomState.state === "lobby";
   const isFinished = roomState.state === "finished";
 
@@ -93,13 +94,15 @@ export default function RoomView({
               you={playerId}
               isHost={isHost}
               onKick={(targetId) => emit("room:kick", { targetId }, "Could not remove player")}
+              onAddBot={() => emit("room:addBot", {}, "Could not add a bot")}
             />
 
             {!full && (
               <>
                 <p className="hint">
-                  Share the code with {4 - roomState.players.length} more player
-                  {4 - roomState.players.length > 1 ? "s" : ""} to begin.
+                  {isHost
+                    ? `Invite ${seatsLeft} more player${seatsLeft > 1 ? "s" : ""}, or fill the empty seats with bots.`
+                    : `Waiting for ${seatsLeft} more player${seatsLeft > 1 ? "s" : ""}.`}
                 </p>
                 <ShareRoom code={roomState.code} />
               </>

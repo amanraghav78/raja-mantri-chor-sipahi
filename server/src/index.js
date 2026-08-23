@@ -10,6 +10,8 @@ const ORIGIN = process.env.CLIENT_ORIGIN || "*";
 const MAX_PLAYERS = 4;
 const DISCONNECTED_ROOM_TTL_MS = 5 * 60 * 1000;
 const GUESS_TIME_MS = 30000;
+const BOT_THINK_MIN_MS = 2200;
+const BOT_THINK_MAX_MS = 4200;
 const ROUND_OPTIONS = [3, 5, 10];
 
 const app = express();
@@ -30,7 +32,7 @@ function broadcastRoom(room) {
 
 function emitToPlayer(room, playerId, event, payload) {
   const player = room.players.get(playerId);
-  if (player?.connected && player.socketId) {
+  if (player && !player.isBot && player.connected && player.socketId) {
     io.to(player.socketId).emit(event, payload);
   }
 }
@@ -64,21 +66,26 @@ function scheduleRoomSweep(code) {
   setTimeout(() => {
     const room = rooms.getRoom(code);
     if (room && rooms.allDisconnected(room)) {
+      clearRoundTimers(room);
       rooms.deleteRoom(code);
     }
   }, DISCONNECTED_ROOM_TTL_MS);
 }
 
-function clearGuessTimer(room) {
+function clearRoundTimers(room) {
   if (room.guessTimer) {
     clearTimeout(room.guessTimer);
     room.guessTimer = null;
+  }
+  if (room.botTimer) {
+    clearTimeout(room.botTimer);
+    room.botTimer = null;
   }
   room.guessDeadline = null;
 }
 
 function finishRound(room, guessedPlayerId, { timedOut = false } = {}) {
-  clearGuessTimer(room);
+  clearRoundTimers(room);
 
   const { correct, chorId, sipahiId, roundPoints } = resolveGuess({
     assignment: room.assignment,
@@ -113,29 +120,44 @@ function finishRound(room, guessedPlayerId, { timedOut = false } = {}) {
     chorId,
     chorNickname: room.players.get(chorId)?.nickname,
     sipahiNickname: room.players.get(sipahiId)?.nickname,
+    sipahiWasBot: !!room.players.get(sipahiId)?.isBot,
   };
   room.history.push({ round: room.round, correct, timedOut, roles, roundPoints });
   room.assignment = null;
 }
 
+function randomCandidate(room) {
+  const ids = Object.keys(room.assignment);
+  const rajaId = ids.find((id) => room.assignment[id].name === "Raja");
+  const sipahiId = ids.find((id) => room.assignment[id].name === "Sipahi");
+  const candidates = ids.filter((id) => id !== rajaId && id !== sipahiId);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 function armGuessTimer(room, code) {
-  clearGuessTimer(room);
   if (!room.settings.timerEnabled) return;
 
   room.guessDeadline = Date.now() + GUESS_TIME_MS;
   room.guessTimer = setTimeout(() => {
     const current = rooms.getRoom(code);
     if (!current || current.state !== "guessing" || !current.assignment) return;
-
-    const ids = Object.keys(current.assignment);
-    const rajaId = ids.find((id) => current.assignment[id].name === "Raja");
-    const sipahiId = ids.find((id) => current.assignment[id].name === "Sipahi");
-    const candidates = ids.filter((id) => id !== rajaId && id !== sipahiId);
-    const randomPick = candidates[Math.floor(Math.random() * candidates.length)];
-
-    finishRound(current, randomPick, { timedOut: true });
+    finishRound(current, randomCandidate(current), { timedOut: true });
     broadcastRoom(current);
   }, GUESS_TIME_MS);
+}
+
+// A bot Sipahi pauses for a beat so the table can register the round, then guesses.
+function armBotGuess(room, code, sipahiId) {
+  if (!room.players.get(sipahiId)?.isBot) return;
+  const delay =
+    BOT_THINK_MIN_MS + Math.floor(Math.random() * (BOT_THINK_MAX_MS - BOT_THINK_MIN_MS));
+
+  room.botTimer = setTimeout(() => {
+    const current = rooms.getRoom(code);
+    if (!current || current.state !== "guessing" || !current.assignment) return;
+    finishRound(current, randomCandidate(current));
+    broadcastRoom(current);
+  }, delay);
 }
 
 io.on("connection", (socket) => {
@@ -164,7 +186,8 @@ io.on("connection", (socket) => {
     if (!room) return cb?.({ ok: false, error: "No room with that code. Check and try again." });
     if (room.state !== "lobby")
       return cb?.({ ok: false, error: "That game is already in progress" });
-    if (room.players.size >= MAX_PLAYERS) return cb?.({ ok: false, error: "That room is full (4/4)" });
+    if (room.players.size >= MAX_PLAYERS)
+      return cb?.({ ok: false, error: "That room is full (4/4)" });
 
     const taken = Array.from(room.players.values()).some(
       (p) => p.nickname.toLowerCase() === name.toLowerCase()
@@ -227,19 +250,31 @@ io.on("connection", (socket) => {
     broadcastRoom(room);
   });
 
+  socket.on("room:addBot", ({ code }, cb) => {
+    const room = rooms.getRoom(code);
+    if (!room) return cb?.({ ok: false, error: "Room not found" });
+    if (!requireHost(room, socket)) return cb?.({ ok: false, error: "Only the host can add bots" });
+    if (room.state !== "lobby")
+      return cb?.({ ok: false, error: "Bots can only be added between rounds" });
+    if (room.players.size >= MAX_PLAYERS) return cb?.({ ok: false, error: "The room is already full" });
+
+    rooms.addBot(room);
+    cb?.({ ok: true });
+    broadcastRoom(room);
+  });
+
   socket.on("room:settings", ({ code, settings }, cb) => {
     const room = rooms.getRoom(code);
     if (!room) return cb?.({ ok: false, error: "Room not found" });
-    if (!requireHost(room, socket)) return cb?.({ ok: false, error: "Only the host can change settings" });
+    if (!requireHost(room, socket))
+      return cb?.({ ok: false, error: "Only the host can change settings" });
     if (room.state !== "lobby")
       return cb?.({ ok: false, error: "Settings can only change between rounds" });
 
     if (settings?.totalRounds !== undefined) {
       const n = Number(settings.totalRounds);
-      if (!ROUND_OPTIONS.includes(n))
-        return cb?.({ ok: false, error: "Rounds must be 3, 5 or 10" });
-      if (n < room.round)
-        return cb?.({ ok: false, error: `You've already played ${room.round} rounds` });
+      if (!ROUND_OPTIONS.includes(n)) return cb?.({ ok: false, error: "Rounds must be 3, 5 or 10" });
+      if (n < room.round) return cb?.({ ok: false, error: `You've already played ${room.round} rounds` });
       room.settings.totalRounds = n;
     }
     if (settings?.swapOnWrongGuess !== undefined) {
@@ -258,22 +293,30 @@ io.on("connection", (socket) => {
     if (!room) return cb?.({ ok: false, error: "Room not found" });
     if (!requireHost(room, socket)) return cb?.({ ok: false, error: "Only the host can start" });
     if (room.players.size !== MAX_PLAYERS)
-      return cb?.({ ok: false, error: `You need exactly ${MAX_PLAYERS} players` });
+      return cb?.({ ok: false, error: `You need ${MAX_PLAYERS} players — add bots to fill the seats` });
     if (room.state !== "lobby") return cb?.({ ok: false, error: "Round already in progress" });
 
     const playerIds = Array.from(room.players.keys());
-    room.assignment = assignRoles(playerIds);
+    room.assignment = assignRoles(playerIds, room.previousRoles);
     room.state = "guessing";
     room.round += 1;
     room.lastResult = null;
-    armGuessTimer(room, code);
 
     const rajaId = playerIds.find((id) => room.assignment[id].name === "Raja");
     const sipahiId = playerIds.find((id) => room.assignment[id].name === "Sipahi");
 
+    // Remember this deal so the next one can avoid repeating anyone's role.
+    room.previousRoles = Object.fromEntries(
+      Object.entries(room.assignment).map(([id, r]) => [id, r.name])
+    );
+
     for (const id of playerIds) {
       emitToPlayer(room, id, "role:assigned", roleAssignedPayload(room, playerIds, rajaId, sipahiId, id));
     }
+
+    clearRoundTimers(room);
+    armGuessTimer(room, code);
+    armBotGuess(room, code, sipahiId);
 
     cb?.({ ok: true });
     broadcastRoom(room);
@@ -316,12 +359,15 @@ io.on("connection", (socket) => {
     if (!room) return cb?.({ ok: false, error: "Room not found" });
     if (!requireHost(room, socket)) return cb?.({ ok: false, error: "Only the host can restart" });
 
-    clearGuessTimer(room);
+    clearRoundTimers(room);
     room.state = "lobby";
     room.round = 0;
     room.lastResult = null;
     room.assignment = null;
     room.history = [];
+    // previousRoles deliberately survives a restart: the table plays straight
+    // on from the last round, so repeating someone's role across that seam
+    // would feel just as broken as repeating it mid-game.
     for (const p of room.players.values()) p.score = 0;
     cb?.({ ok: true });
     broadcastRoom(room);
@@ -336,7 +382,8 @@ io.on("connection", (socket) => {
       return cb?.({ ok: false, error: "You can only remove players between rounds" });
     const target = room.players.get(targetId);
     if (!target) return cb?.({ ok: false, error: "Player not found" });
-    if (target.connected) return cb?.({ ok: false, error: "You can only remove offline players" });
+    if (!target.isBot && target.connected)
+      return cb?.({ ok: false, error: "You can only remove offline players" });
 
     rooms.removePlayer(room, targetId);
     cb?.({ ok: true });

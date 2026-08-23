@@ -14,13 +14,38 @@ function shuffle(arr) {
   return a;
 }
 
-export function assignRoles(playerIds) {
-  const shuffledRoles = shuffle(ROLES);
-  const assignment = {};
-  playerIds.forEach((id, i) => {
-    assignment[id] = shuffledRoles[i];
-  });
-  return assignment;
+const MAX_REDEAL_ATTEMPTS = 40;
+
+/**
+ * Deals the four roles at random, but avoids handing anyone the role they
+ * just had. A plain independent shuffle is uniformly fair yet still gives
+ * each player a 1-in-4 chance of repeating every round, which players read
+ * as broken ("why am I Raja again?"). Re-dealing until nobody repeats keeps
+ * it random while removing the streaks people actually notice.
+ *
+ * @param playerIds       ids to deal to
+ * @param previousRoles   { [playerId]: roleName } from the last round, if any
+ */
+export function assignRoles(playerIds, previousRoles = null) {
+  let best = null;
+
+  for (let attempt = 0; attempt < MAX_REDEAL_ATTEMPTS; attempt++) {
+    const shuffled = shuffle(ROLES);
+    const candidate = {};
+    playerIds.forEach((id, i) => {
+      candidate[id] = shuffled[i];
+    });
+
+    if (!previousRoles) return candidate;
+
+    const repeats = playerIds.filter((id) => previousRoles[id] === candidate[id].name).length;
+    if (repeats === 0) return candidate;
+
+    // Keep the least-repetitive deal seen so far as a fallback.
+    if (!best || repeats < best.repeats) best = { candidate, repeats };
+  }
+
+  return best.candidate;
 }
 
 export function resolveGuess({ assignment, guessedPlayerId, swapOnWrongGuess = true }) {

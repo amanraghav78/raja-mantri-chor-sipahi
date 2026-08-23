@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
-const COLORS = ["#f5b942", "#e0722f", "#4caf7d", "#7aa5f0", "#e05a5a"];
+// Drawn from the Haveli palette so the burst belongs to the same world
+// as the screen behind it: brass, terracotta, jade, indigo, deep rose.
+const COLORS = ["#d89a4c", "#c96a2e", "#4e9e70", "#6b8fd4", "#c43346"];
 
 export default function Confetti({ burstKey }) {
   const canvasRef = useRef(null);
