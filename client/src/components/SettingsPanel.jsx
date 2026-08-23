@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings as SettingsIcon, Volume2, Moon, Sun, Dice5, Repeat, Timer } from "lucide-react";
+import { Volume2, Moon, Dice5, Repeat, Timer } from "lucide-react";
 import Modal from "./Modal.jsx";
 
 const AVATARS = ["🦁", "🐯", "🦅", "🐘", "🦚", "🐅", "🦌", "🐍", "🦂", "🐊"];
@@ -33,7 +33,7 @@ export default function SettingsPanel({
   const [nickname, setNickname] = useState(me?.nickname || "");
   const inLobby = roomState?.state === "lobby";
   const settings = roomState?.settings;
-  const takenAvatars = new Set(
+  const taken = new Set(
     (roomState?.players || []).filter((p) => p.id !== me?.id).map((p) => p.avatar)
   );
 
@@ -44,62 +44,52 @@ export default function SettingsPanel({
   }
 
   return (
-    <Modal title="Settings" icon={SettingsIcon} onClose={onClose}>
-      {/* ---- Per-player, applies only to this device ---- */}
-      <div className="setting-group">
+    <Modal title="Settings" onClose={onClose}>
+      {/* ---- this device only ---- */}
+      <div className="setting">
         <div className="setting-head">
           <span className="setting-label">
-            <Volume2 size={17} /> Sound &amp; vibration
+            <Volume2 size={18} /> Sound &amp; haptics
           </span>
           <Switch on={!muted} onChange={onToggleMute} label="Sound effects" />
         </div>
-        <p className="setting-desc">Reveal chimes, result stings and haptic taps.</p>
+        <p className="setting-desc">Coin flips, seal stamps and result stings.</p>
       </div>
 
-      <div className="setting-group">
+      <div className="setting">
         <div className="setting-head">
           <span className="setting-label">
-            {theme === "dark" ? <Moon size={17} /> : <Sun size={17} />} Dark theme
+            <Moon size={18} /> Dark theme
           </span>
           <Switch on={theme === "dark"} onChange={onToggleTheme} label="Dark theme" />
         </div>
-        <p className="setting-desc">Easier on the eyes for late-night games.</p>
+        <p className="setting-desc">Charcoal and gold. Turn off for the ivory court.</p>
       </div>
 
       {roomState && (
         <>
-          <div className="setting-group">
+          <div className="setting">
             <span className="setting-label">Your name</span>
             <input
-              className="field-inline"
+              className="input"
+              style={{ marginTop: "var(--s-3)" }}
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               onBlur={commitNickname}
               onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
               maxLength={16}
-              style={{
-                width: "100%",
-                marginTop: 8,
-                padding: "11px 13px",
-                borderRadius: 12,
-                border: "1.5px solid var(--border)",
-                background: "var(--surface-2)",
-                color: "var(--text)",
-                fontFamily: "inherit",
-                fontSize: "1rem",
-              }}
             />
           </div>
 
-          <div className="setting-group">
-            <span className="setting-label">Your avatar</span>
+          <div className="setting">
+            <span className="setting-label">Your seal</span>
             <div className="avatar-grid">
               {AVATARS.map((a) => (
                 <button
                   key={a}
                   type="button"
-                  className={`avatar-pick ${me?.avatar === a ? "avatar-pick-active" : ""}`}
-                  disabled={takenAvatars.has(a)}
+                  className={`avatar-pick ${me?.avatar === a ? "avatar-pick-on" : ""}`}
+                  disabled={taken.has(a)}
                   onClick={() => onUpdatePlayer({ avatar: a })}
                 >
                   {a}
@@ -107,22 +97,18 @@ export default function SettingsPanel({
               ))}
             </div>
           </div>
-        </>
-      )}
 
-      {/* ---- Host-only, applies to the whole room ---- */}
-      {roomState && (
-        <>
-          <div className="setting-group">
+          {/* ---- host only, applies to the whole room ---- */}
+          <div className="setting">
             <div className="setting-head">
               <span className="setting-label">
-                <Dice5 size={17} /> Rounds per game <span className="host-badge">Host</span>
+                <Dice5 size={18} /> Rounds <span className="host-tag">Host</span>
               </span>
             </div>
             <p className="setting-desc">
               {isHost
                 ? inLobby
-                  ? "How many rounds before the winner is crowned."
+                  ? "How many rounds before the crown is awarded."
                   : "Can only be changed between rounds."
                 : "Only the host can change this."}
             </p>
@@ -131,7 +117,7 @@ export default function SettingsPanel({
                 <button
                   key={n}
                   type="button"
-                  className={`segment ${settings?.totalRounds === n ? "segment-active" : ""}`}
+                  className={`segment ${settings?.totalRounds === n ? "segment-on" : ""}`}
                   disabled={!isHost || !inLobby || n < (roomState?.round || 0)}
                   onClick={() => onUpdateSettings({ totalRounds: n })}
                 >
@@ -141,27 +127,26 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          <div className="setting-group">
+          <div className="setting">
             <div className="setting-head">
               <span className="setting-label">
-                <Repeat size={17} /> Wrong guess swaps points <span className="host-badge">Host</span>
+                <Repeat size={18} /> Wrong guess swaps <span className="host-tag">Host</span>
               </span>
               <Switch
                 on={!!settings?.swapOnWrongGuess}
                 onChange={(v) => isHost && inLobby && onUpdateSettings({ swapOnWrongGuess: v })}
-                label="Swap points on wrong guess"
+                label="Swap points on a wrong guess"
               />
             </div>
             <p className="setting-desc">
-              On: the Chor takes the Sipahi's 500. Off: the Sipahi just loses their points and the
-              Chor still scores nothing.
+              On: the Chor takes the Sipahi's 500. Off: the Sipahi simply loses their points.
             </p>
           </div>
 
-          <div className="setting-group">
+          <div className="setting">
             <div className="setting-head">
               <span className="setting-label">
-                <Timer size={17} /> Guess timer <span className="host-badge">Host</span>
+                <Timer size={18} /> Guess timer <span className="host-tag">Host</span>
               </span>
               <Switch
                 on={!!settings?.timerEnabled}
@@ -170,7 +155,7 @@ export default function SettingsPanel({
               />
             </div>
             <p className="setting-desc">
-              Gives the Sipahi 30 seconds to decide. If it runs out, a random pick is made.
+              Gives the Sipahi 30 seconds. If it runs out, the accusation is made at random.
             </p>
           </div>
         </>

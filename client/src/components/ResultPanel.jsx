@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { PartyPopper, XCircle, TimerOff } from "lucide-react";
+import { TimerOff } from "lucide-react";
 import { ROLE_CONFIG, ROLE_ORDER } from "../roles.js";
+import RoleCrest from "./RoleCrest.jsx";
 import { playCorrect, playWrong, vibrate } from "../sound.js";
 
 export default function ResultPanel({ result, round }) {
@@ -11,58 +12,53 @@ export default function ResultPanel({ result, round }) {
   useEffect(() => {
     if (result.correct) {
       playCorrect();
-      vibrate([30, 40, 30, 40, 60]);
+      vibrate([30, 40, 30, 40, 70]);
     } else {
       playWrong();
-      vibrate(160);
+      vibrate(170);
     }
   }, [round, result.correct]);
 
   return (
     <div className="stack">
-      <div className={`result-banner ${result.correct ? "result-correct" : "result-wrong"}`}>
-        {result.correct ? <PartyPopper size={30} /> : <XCircle size={30} />}
-        <h2 className="result-headline">
-          {result.correct ? "The Chor is caught!" : "The Chor got away!"}
-        </h2>
-        <p className="result-sub">
+      <div className={`verdict ${result.correct ? "verdict-win" : "verdict-lose"}`}>
+        <RoleCrest role={result.correct ? "Sipahi" : "Chor"} size={38} />
+        <h2 className="verdict-title">{result.correct ? "Chor caught" : "Chor escaped"}</h2>
+        <p className="verdict-sub">
           {result.correct ? (
             <>
               {result.sipahiNickname} caught <strong>{result.chorNickname}</strong> red-handed.
             </>
           ) : (
             <>
-              {result.sipahiNickname} picked {result.guessedNickname} — the Chor was{" "}
+              {result.sipahiNickname} accused {result.guessedNickname} — the Chor was{" "}
               <strong>{result.chorNickname}</strong>.
             </>
           )}
         </p>
         {result.timedOut && (
-          <p className="result-sub" style={{ marginTop: 8, display: "flex", justifyContent: "center", gap: 6 }}>
-            <TimerOff size={15} /> Time ran out, so the pick was random.
+          <p className="verdict-sub" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <TimerOff size={14} /> Time ran out, so the accusation was random.
           </p>
         )}
       </div>
 
       <ul className="reveal-list">
-        {rows.map((r, i) => {
-          const cfg = ROLE_CONFIG[r.role];
-          const Icon = cfg.icon;
-          return (
-            <li
-              key={r.id}
-              className={`reveal-row ${cfg.className}`}
-              style={{ animationDelay: `${i * 70}ms` }}
-            >
-              <Icon size={18} />
-              <span className="reveal-role">{r.role}</span>
-              <span className="reveal-name">
-                {r.avatar} {r.nickname}
-              </span>
-              <span className="reveal-points">+{r.points}</span>
-            </li>
-          );
-        })}
+        {rows.map((r, i) => (
+          <li
+            key={r.id}
+            className={`reveal-row ${ROLE_CONFIG[r.role].tone}`}
+            style={{ animationDelay: `${i * 80}ms` }}
+          >
+            <RoleCrest role={r.role} size={22} />
+            <span className="reveal-role">{r.role}</span>
+            <span className="reveal-who">
+              <span className="avatar avatar-sm">{r.avatar}</span>
+              <span>{r.nickname}</span>
+            </span>
+            <span className="reveal-pts">+{r.points}</span>
+          </li>
+        ))}
       </ul>
     </div>
   );

@@ -1,39 +1,34 @@
-import { Crown, ScrollText, Shield, VenetianMask } from "lucide-react";
-
-// Single source of truth for role identity — icon, colour class and copy are
-// reused by the reveal card, result list, scoreboard and how-to-play legend.
+// Single source of truth for role identity. The crest itself lives in
+// RoleCrest.jsx; everything here is the copy and the tone hook that pairs
+// with the --role-* tokens in theme.css.
 export const ROLE_CONFIG = {
   Raja: {
-    icon: Crown,
-    className: "role-raja",
-    translation: "The King",
+    tone: "tone-Raja",
+    translit: "राजा · The King",
     points: 1000,
-    brief: "You rule the court. Your identity is revealed to everyone.",
+    brief: "You hold the court. Your name is announced to everyone.",
     short: "Revealed to all. Always scores full points.",
   },
   Mantri: {
-    icon: ScrollText,
-    className: "role-mantri",
-    translation: "The Minister",
+    tone: "tone-Mantri",
+    translit: "मंत्री · The Minister",
     points: 800,
-    brief: "Stay quiet and stay hidden — your points are safe either way.",
+    brief: "Say nothing, stay unseen. Your points are never at risk.",
     short: "Stays hidden. Points are never at risk.",
   },
   Sipahi: {
-    icon: Shield,
-    className: "role-sipahi",
-    translation: "The Soldier",
+    tone: "tone-Sipahi",
+    translit: "सिपाही · The Soldier",
     points: 500,
-    brief: "Find the Chor among the two hidden players to keep your points.",
+    brief: "Name the Chor between the two hidden players to keep your points.",
     short: "Must find the Chor to keep their points.",
   },
   Chor: {
-    icon: VenetianMask,
-    className: "role-chor",
-    translation: "The Thief",
+    tone: "tone-Chor",
+    translit: "चोर · The Thief",
     points: 0,
-    brief: "Keep your cool. If the Sipahi picks wrong, you take their points.",
-    short: "Hides. Steals the Sipahi's points on a wrong guess.",
+    brief: "Hold your nerve. A wrong accusation hands you the Sipahi's points.",
+    short: "Hides. Takes the Sipahi's points on a wrong guess.",
   },
 };
 

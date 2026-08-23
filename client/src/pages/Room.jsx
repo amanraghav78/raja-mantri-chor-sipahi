@@ -6,8 +6,6 @@ import {
   Trophy,
   ArrowRight,
   RotateCcw,
-  Users,
-  ListOrdered,
 } from "lucide-react";
 import { socket } from "../socket.js";
 import PlayerList from "../components/PlayerList.jsx";
@@ -52,89 +50,86 @@ export default function RoomView({
     <div className="screen">
       <Confetti burstKey={confettiKey} />
 
-      <header className="room-header">
+      <header className="topbar shell">
         <div>
-          <span className="room-code-label">Room</span>
-          <span className="room-code">{roomState.code}</span>
+          <span className="eyebrow">Room</span>
+          <span className="room-code metal-text">{roomState.code}</span>
         </div>
         {!isFinished && (
           <span className="round-pill">
-            Round {Math.max(1, Math.min(roomState.round, roomState.totalRounds))} /{" "}
-            {roomState.totalRounds}
+            {Math.max(1, Math.min(roomState.round, roomState.totalRounds))} / {roomState.totalRounds}
           </span>
         )}
-        <div className="header-actions">
-          <button className="btn-icon" onClick={onOpenHowTo} type="button" aria-label="How to play">
+        <div className="topbar-actions">
+          <button className="icon-btn" onClick={onOpenHowTo} type="button" aria-label="How to play">
             <HelpCircle size={19} />
           </button>
-          <button className="btn-icon" onClick={onOpenSettings} type="button" aria-label="Settings">
+          <button className="icon-btn" onClick={onOpenSettings} type="button" aria-label="Settings">
             <SettingsIcon size={19} />
           </button>
-          <button className="btn-icon" onClick={onLeave} type="button" aria-label="Leave room">
+          <button className="icon-btn" onClick={onLeave} type="button" aria-label="Leave room">
             <LogOut size={19} />
           </button>
         </div>
       </header>
 
       {error && (
-        <p className="error" style={{ marginTop: 12 }}>
+        <p className="error-line" style={{ marginTop: "var(--s-4)" }}>
           {error}
         </p>
       )}
 
-      <main className="room-body">
+      <main className="shell" style={{ flex: 1, paddingBlock: "var(--s-5)" }}>
         {roomState.state === "lobby" && (
           <div className="phase">
-            <h2 className="section-title">
-              <Users size={18} /> Players ({roomState.players.length}/4)
-            </h2>
-            <PlayerList
-              players={roomState.players}
-              hostId={roomState.hostId}
-              you={playerId}
-              isHost={isHost}
-              onKick={(targetId) => emit("room:kick", { targetId }, "Could not remove player")}
-              onAddBot={() => emit("room:addBot", {}, "Could not add a bot")}
-            />
+            <div className="stack">
+              <h2 className="section-title">The court ({roomState.players.length}/4)</h2>
+              <PlayerList
+                players={roomState.players}
+                hostId={roomState.hostId}
+                you={playerId}
+                isHost={isHost}
+                onKick={(targetId) => emit("room:kick", { targetId }, "Could not remove player")}
+                onAddBot={() => emit("room:addBot", {}, "Could not add a bot")}
+              />
+            </div>
 
             {!full && (
-              <>
+              <div className="stack">
                 <p className="hint">
                   {isHost
-                    ? `Invite ${seatsLeft} more player${seatsLeft > 1 ? "s" : ""}, or fill the empty seats with bots.`
+                    ? `Invite ${seatsLeft} more, or seat a bot in the empty ${seatsLeft > 1 ? "chairs" : "chair"}.`
                     : `Waiting for ${seatsLeft} more player${seatsLeft > 1 ? "s" : ""}.`}
                 </p>
                 <ShareRoom code={roomState.code} />
-              </>
+              </div>
             )}
 
             {isHost ? (
               <button
-                className="btn btn-primary"
+                className="btn btn-gold btn-full"
                 disabled={!canStart}
                 onClick={() => emit("room:start", {}, "Could not start the round")}
               >
                 <Play size={18} />
-                {roomState.round === 0 ? "Start Game" : `Start Round ${roomState.round + 1}`}
+                {roomState.round === 0 ? "Begin" : `Round ${roomState.round + 1}`}
               </button>
             ) : (
               full && (
                 <div className="waiting">
                   <div className="spinner" />
                   <p className="hint">
-                    Waiting for the host to start<span className="dots" />
+                    Waiting for the host<span className="dots" />
                   </p>
                 </div>
               )
             )}
 
             {roomState.round > 0 && (
-              <>
-                <h2 className="section-title">
-                  <ListOrdered size={18} /> Scores
-                </h2>
+              <div className="stack">
+                <h2 className="section-title">Standings</h2>
                 <Scoreboard players={roomState.players} you={playerId} />
-              </>
+              </div>
             )}
           </div>
         )}
@@ -155,7 +150,7 @@ export default function RoomView({
                   <div className="waiting">
                     <div className="spinner" />
                     <p className="hint">
-                      The Sipahi is choosing<span className="dots" />
+                      The Sipahi is deciding<span className="dots" />
                     </p>
                   </div>
                 )}
@@ -164,7 +159,7 @@ export default function RoomView({
               <div className="waiting">
                 <div className="spinner" />
                 <p className="hint">
-                  Dealing roles<span className="dots" />
+                  Striking the coins<span className="dots" />
                 </p>
               </div>
             )}
@@ -175,19 +170,19 @@ export default function RoomView({
           <div className="phase">
             <ResultPanel result={roomState.lastResult} round={roomState.round} />
 
-            <h2 className="section-title">
-              <ListOrdered size={18} /> Scores
-            </h2>
-            <Scoreboard players={roomState.players} you={playerId} />
+            <div className="stack">
+              <h2 className="section-title">Standings</h2>
+              <Scoreboard players={roomState.players} you={playerId} />
+            </div>
 
             {isHost ? (
               <button
-                className="btn btn-primary"
+                className="btn btn-gold btn-full"
                 onClick={() => emit("round:next", {}, "Could not continue")}
               >
                 {roomState.round >= roomState.totalRounds ? (
                   <>
-                    <Trophy size={18} /> See the winner
+                    <Trophy size={18} /> Crown the winner
                   </>
                 ) : (
                   <>
@@ -211,7 +206,7 @@ export default function RoomView({
             <WinnerScreen players={roomState.players} you={playerId} />
             {isHost ? (
               <button
-                className="btn btn-primary"
+                className="btn btn-gold btn-full"
                 onClick={() => emit("room:playAgain", {}, "Could not restart")}
               >
                 <RotateCcw size={18} /> Play again
@@ -220,7 +215,7 @@ export default function RoomView({
               <div className="waiting">
                 <div className="spinner" />
                 <p className="hint">
-                  Waiting for the host to restart<span className="dots" />
+                  Waiting for the host<span className="dots" />
                 </p>
               </div>
             )}

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 
-// Drawn from the Haveli palette so the burst belongs to the same world
-// as the screen behind it: brass, terracotta, jade, indigo, deep rose.
-const COLORS = ["#d89a4c", "#c96a2e", "#4e9e70", "#6b8fd4", "#c43346"];
+// Struck-metal confetti: leaf gold, pale gold, bronze, copper, with the two
+// jewel tones as accents. Reads as coins and foil rather than party plastic.
+const COLORS = ["#d4af37", "#f5e7a3", "#b87333", "#cd8f4e", "#0b6e4f", "#7a1f2b"];
 
 export default function Confetti({ burstKey }) {
   const canvasRef = useRef(null);
@@ -64,5 +64,5 @@ export default function Confetti({ burstKey }) {
     return () => cancelAnimationFrame(raf);
   }, [burstKey]);
 
-  return <canvas ref={canvasRef} className="confetti-canvas" />;
+  return <canvas ref={canvasRef} className="confetti-layer" />;
 }

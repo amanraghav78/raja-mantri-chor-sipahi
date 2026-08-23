@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { CheckCircle2, Search, Lock } from "lucide-react";
+import { CheckCircle2, Lock } from "lucide-react";
 import { socket } from "../socket.js";
-import { vibrate } from "../sound.js";
+import { playSelect, vibrate } from "../sound.js";
 
 export default function GuessPanel({ code, candidates, setError }) {
   const [selected, setSelected] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+
+  function pick(id) {
+    setSelected(id);
+    playSelect();
+    vibrate(12);
+  }
 
   function confirm() {
     if (!selected || submitted) return;
@@ -22,10 +28,10 @@ export default function GuessPanel({ code, candidates, setError }) {
 
   if (submitted) {
     return (
-      <div className="locked-in">
+      <div className="locked">
         <Lock size={26} style={{ color: "var(--accent)" }} />
         <p className="hint">
-          Locked in. Revealing<span className="dots" />
+          Accusation sealed<span className="dots" />
         </p>
       </div>
     );
@@ -33,31 +39,27 @@ export default function GuessPanel({ code, candidates, setError }) {
 
   return (
     <div className="stack">
-      <h2 className="section-title">
-        <Search size={18} /> Who is the Chor?
-      </h2>
-      <div className="guess-options">
+      <h2 className="section-title">Name the Chor</h2>
+      <div className="suspects">
         {candidates.map((c) => {
-          const isSelected = selected === c.id;
+          const on = selected === c.id;
           return (
             <button
               key={c.id}
               type="button"
-              className={`suspect ${isSelected ? "suspect-selected" : ""}`}
-              onClick={() => setSelected(c.id)}
-              aria-pressed={isSelected}
+              className={`suspect ${on ? "suspect-on" : ""}`}
+              onClick={() => pick(c.id)}
+              aria-pressed={on}
             >
-              <div className="avatar avatar-lg">{c.avatar}</div>
+              <span className="avatar avatar-lg">{c.avatar}</span>
               <span className="suspect-name">{c.nickname}</span>
-              <span className="suspect-check">
-                {isSelected ? <CheckCircle2 size={20} /> : null}
-              </span>
+              <span className="suspect-mark">{on ? <CheckCircle2 size={22} /> : null}</span>
             </button>
           );
         })}
       </div>
-      <button className="btn btn-primary" disabled={!selected} onClick={confirm}>
-        {selected ? "Lock in my guess" : "Pick a player"}
+      <button className="btn btn-gold btn-full" disabled={!selected} onClick={confirm}>
+        {selected ? "Seal the accusation" : "Choose a suspect"}
       </button>
     </div>
   );

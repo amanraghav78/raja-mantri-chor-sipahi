@@ -1,58 +1,67 @@
 import { useEffect, useState } from "react";
-import { Crown } from "lucide-react";
 import { ROLE_CONFIG } from "../roles.js";
-import { playFlip, playReveal, vibrate } from "../sound.js";
+import RoleCrest from "./RoleCrest.jsx";
+import { Mandala } from "./Ornament.jsx";
+import { playCoinFlip, playSealStamp, vibrate } from "../sound.js";
 
 export default function RoleCard({ myRole }) {
-  const [revealed, setRevealed] = useState(false);
+  const [flipped, setFlipped] = useState(false);
   const cfg = ROLE_CONFIG[myRole.role] || {};
-  const Icon = cfg.icon;
 
-  // A fresh role means a fresh round — flip the card back face-down.
+  // A new deal means a new round — put the coin back face-down.
   useEffect(() => {
-    setRevealed(false);
+    setFlipped(false);
   }, [myRole.role, myRole.raja?.id]);
 
-  function reveal() {
-    if (revealed) return;
-    playFlip();
-    setRevealed(true);
-    playReveal();
-    vibrate(myRole.role === "Chor" ? [40, 60, 40] : 60);
+  function flip() {
+    if (flipped) return;
+    setFlipped(true);
+    playCoinFlip();
+    vibrate(18);
+    // The seal lands as the coin settles, not when it starts spinning.
+    window.setTimeout(() => {
+      playSealStamp();
+      vibrate(myRole.role === "Chor" ? [40, 60, 90] : [30, 40, 70]);
+    }, 880);
   }
 
   return (
-    <div className={`role-stage ${revealed ? "role-flip-active" : ""}`}>
-      <div className="role-flip-inner">
+    <div className="stack">
+      <div className="coin-stage">
         <button
           type="button"
-          className="role-face role-face-back"
-          onClick={reveal}
-          aria-label="Tap to reveal your role"
+          className={`coin ${flipped ? "coin-flipped" : ""}`}
+          onClick={flip}
+          aria-label={flipped ? `Your role: ${myRole.role}` : "Tap the seal to reveal your role"}
         >
-          <div className="role-back-crest">👑</div>
-          <div className="role-back-label">Tap to reveal</div>
-          <p className="hint" style={{ fontSize: "0.8rem" }}>
-            Keep your screen to yourself
-          </p>
-        </button>
+          <span className="coin-stamp" />
 
-        <div className={`role-face role-face-front ${cfg.className || ""}`}>
-          {Icon && (
-            <div className="role-icon-ring">
-              <Icon size={38} />
-            </div>
-          )}
-          <div className="role-name">{myRole.role}</div>
-          <div className="role-translation">{cfg.translation}</div>
-          <div className="role-points">{myRole.points} pts</div>
+          <span className="coin-face coin-back">
+            <Mandala size={216} className="coin-back-mandala" />
+            <span className="coin-back-plate">
+              <span className="coin-back-label">Tap to reveal</span>
+              <span className="coin-back-hint">Keep the screen to yourself</span>
+            </span>
+          </span>
+
+          <span className={`coin-face coin-front ${cfg.tone || ""}`}>
+            <RoleCrest role={myRole.role} size={54} className="coin-crest" />
+            <span className="coin-role">{myRole.role}</span>
+            <span className="coin-translit">{cfg.translit}</span>
+            <span className="coin-points">{myRole.points} pts</span>
+          </span>
+        </button>
+      </div>
+
+      {flipped && (
+        <>
           <p className="role-brief">{cfg.brief}</p>
-          <div className="role-raja-line">
-            <Crown size={15} style={{ color: "var(--raja)" }} />
+          <div className="raja-callout">
+            <RoleCrest role="Raja" size={18} />
             Raja is <strong>{myRole.raja.nickname}</strong>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

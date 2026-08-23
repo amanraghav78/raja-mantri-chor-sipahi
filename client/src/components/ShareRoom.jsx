@@ -12,9 +12,9 @@ export default function ShareRoom({ code }) {
   useEffect(() => {
     if (!showQr || !canvasRef.current) return;
     QRCode.toCanvas(canvasRef.current, joinUrl, {
-      width: 190,
+      width: 188,
       margin: 1,
-      color: { dark: "#1a0f2e", light: "#ffffff" },
+      color: { dark: "#0f0f12", light: "#ffffff" },
     });
   }, [showQr, joinUrl]);
 
@@ -23,11 +23,11 @@ export default function ShareRoom({ code }) {
       try {
         await navigator.share({
           title: "Raja Mantri Chor Sipahi",
-          text: `Join my game — room code ${code}`,
+          text: `Join my court — room ${code}`,
           url: joinUrl,
         });
       } catch {
-        // share sheet dismissed — nothing to report
+        // share sheet dismissed
       }
       return;
     }
@@ -40,19 +40,19 @@ export default function ShareRoom({ code }) {
   }
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
+    <div className="stack">
       <div className="share-row">
-        <button className="btn btn-outline" type="button" onClick={share}>
+        <button className="btn btn-quiet" type="button" onClick={share}>
           {canShare ? <Share2 size={17} /> : <Copy size={17} />}
-          {canShare ? "Share" : "Copy link"}
+          {canShare ? "Share" : "Copy"}
         </button>
-        <button className="btn btn-outline" type="button" onClick={() => setShowQr((v) => !v)}>
+        <button className="btn btn-quiet" type="button" onClick={() => setShowQr((v) => !v)}>
           <QrCode size={17} />
-          {showQr ? "Hide QR" : "QR code"}
+          {showQr ? "Hide QR" : "QR"}
         </button>
       </div>
       {showQr && (
-        <div className="qr-wrap">
+        <div className="qr-frame">
           <canvas ref={canvasRef} />
         </div>
       )}

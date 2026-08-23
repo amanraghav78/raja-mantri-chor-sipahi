@@ -1,0 +1,116 @@
+/* ==========================================================================
+   BASE — reset, ground, typography defaults, Indian motif textures
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: var(--t-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+
+/* --------------------------------------------------------------------------
+   The ground is three stacked layers, all fixed so they never scroll away:
+   1. a jaali (lattice) tile — the Mughal screen motif, at ~5% ink
+   2. a warm brass bloom from the top, so the page has a light source
+   3. a deep vignette at the base to keep the metal reading against charcoal
+   -------------------------------------------------------------------------- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23d4af37' stroke-width='1.1'%3E%3Cpath d='M36 0 L72 36 L36 72 L0 36 Z'/%3E%3Cpath d='M36 12 L60 36 L36 60 L12 36 Z'/%3E%3Ccircle cx='36' cy='36' r='7'/%3E%3Cpath d='M0 0 L12 12 M72 0 L60 12 M0 72 L12 60 M72 72 L60 60'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  opacity: 1;
+  /* The tile is drawn in gold; the token controls how much of it shows. */
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  filter: opacity(0.5);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+[data-theme="light"] body::before {
+  mix-blend-mode: multiply;
+  filter: opacity(0.2);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(212, 175, 55, 0.12) 0%, transparent 60%),
+    radial-gradient(90% 50% at 50% 108%, var(--bg-deep) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ---------- Type defaults ---------- */
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p { margin: 0; }
+
+button, input {
+  font-family: inherit;
+}
+
+/* A gold that behaves like leaf rather than paint: the highlight sits
+   across the glyphs, so it catches light the way stamped metal does. */
+.metal-text {
+  background: var(--grad-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+[data-theme="light"] .metal-text {
+  background: linear-gradient(135deg, #6d5210 0%, #a8842a 40%, #d4af37 55%, #8a6512 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ---------- Focus ---------- */
+
+:where(button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* ---------- Motion preferences ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

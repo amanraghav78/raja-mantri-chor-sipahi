@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
-export default function Modal({ title, icon: Icon, onClose, children }) {
+export default function Modal({ title, onClose, children }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
@@ -15,14 +15,11 @@ export default function Modal({ title, icon: Icon, onClose, children }) {
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2 className="modal-title">
-            {Icon && <Icon size={20} />}
-            {title}
-          </h2>
-          <button className="btn-icon" onClick={onClose} type="button" aria-label="Close">
+    <div className="sheet-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h2 className="sheet-title metal-text">{title}</h2>
+          <button className="icon-btn" onClick={onClose} type="button" aria-label="Close">
             <X size={20} />
           </button>
         </div>

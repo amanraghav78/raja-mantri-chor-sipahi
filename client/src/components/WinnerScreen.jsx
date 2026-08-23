@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import Scoreboard from "./Scoreboard.jsx";
+import { Mandala } from "./Ornament.jsx";
 import { playWinner, vibrate } from "../sound.js";
 
-// Visual podium order puts 2nd on the left, 1st in the middle, 3rd on the right.
-const PODIUM_LAYOUT = [1, 0, 2];
+// 2nd on the left, 1st centre, 3rd on the right.
+const LAYOUT = [1, 0, 2];
 
 export default function WinnerScreen({ players, you }) {
   const sorted = [...players].sort((a, b) => b.score - a.score);
@@ -12,30 +13,33 @@ export default function WinnerScreen({ players, you }) {
 
   useEffect(() => {
     playWinner();
-    vibrate([60, 50, 60, 50, 120]);
+    vibrate([60, 50, 60, 50, 130]);
   }, []);
 
   return (
-    <div className="stack">
+    <div className="stack-5">
       <div className="winner">
-        <span className="winner-label">{tied.length > 1 ? "It's a tie" : "Winner"}</span>
-        <div className="winner-crown">👑</div>
-        <div className="winner-name">
+        <span className="eyebrow">{tied.length > 1 ? "A shared crown" : "Winner"}</span>
+        <div className="winner-medal">
+          <Mandala size={104} className="winner-medal-mandala" />
+          <span className="winner-medal-emoji">{winner?.avatar}</span>
+        </div>
+        <div className="winner-name metal-text">
           {tied.length > 1 ? tied.map((p) => p.nickname).join(" & ") : winner?.nickname}
         </div>
         <div className="winner-score">{winner?.score} points</div>
       </div>
 
       <div className="podium">
-        {PODIUM_LAYOUT.map((rank) => {
+        {LAYOUT.map((rank) => {
           const p = sorted[rank];
           if (!p) return null;
           return (
             <div key={p.id} className={`podium-slot podium-${rank + 1}`}>
-              <div className="avatar">{p.avatar}</div>
-              <div className="podium-name">{p.nickname}</div>
-              <div className="podium-score">{p.score}</div>
-              <div className="podium-bar" style={{ animationDelay: `${rank * 120}ms` }}>
+              <span className="avatar">{p.avatar}</span>
+              <span className="podium-name">{p.nickname}</span>
+              <span className="podium-score">{p.score}</span>
+              <div className="podium-bar" style={{ animationDelay: `${rank * 130}ms` }}>
                 {rank + 1}
               </div>
             </div>
@@ -43,8 +47,10 @@ export default function WinnerScreen({ players, you }) {
         })}
       </div>
 
-      <h2 className="section-title">Final scores</h2>
-      <Scoreboard players={players} you={you} />
+      <div className="stack">
+        <h2 className="section-title">Final standings</h2>
+        <Scoreboard players={players} you={you} />
+      </div>
     </div>
   );
 }

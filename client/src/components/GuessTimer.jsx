@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Timer } from "lucide-react";
 import { playTick } from "../sound.js";
 
 const TOTAL_MS = 30000;
@@ -23,8 +22,8 @@ export default function GuessTimer({ deadline }) {
       setRemaining(ms);
     };
     tick();
-    const interval = setInterval(tick, 200);
-    return () => clearInterval(interval);
+    const id = setInterval(tick, 200);
+    return () => clearInterval(id);
   }, [deadline]);
 
   if (remaining === null) return null;
@@ -34,11 +33,8 @@ export default function GuessTimer({ deadline }) {
   const pct = Math.max(0, Math.min(100, (remaining / TOTAL_MS) * 100));
 
   return (
-    <div>
-      <div className={`guess-timer ${urgent ? "guess-timer-urgent" : ""}`}>
-        <Timer size={16} />
-        {secs > 0 ? `${secs}s to decide` : "Time's up"}
-      </div>
+    <div className={`timer ${urgent ? "timer-urgent" : ""}`}>
+      <div className="timer-head">{secs > 0 ? `${secs}s to decide` : "Time's up"}</div>
       <div className="timer-track">
         <div className="timer-fill" style={{ width: `${pct}%` }} />
       </div>

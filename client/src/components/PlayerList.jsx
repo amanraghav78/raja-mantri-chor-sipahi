@@ -8,22 +8,22 @@ export default function PlayerList({ players, hostId, you, isHost, onKick, onAdd
       {players.map((p) => (
         <li key={p.id} className="player-row">
           <div className="player-identity">
-            <div className="avatar">{p.avatar}</div>
+            <span className="avatar">{p.avatar}</span>
             <span className="player-name">
               {p.nickname}
               {p.id === you && " (you)"}
             </span>
           </div>
-          <div className="player-row-actions">
+          <div className="player-actions">
             {p.isBot && (
-              <span className="tag tag-bot">
+              <span className="chip chip-bot">
                 <Bot size={11} /> Bot
               </span>
             )}
-            {p.id === hostId && <span className="tag tag-host">Host</span>}
-            {!p.isBot && !p.connected && <span className="tag tag-warn">Offline</span>}
+            {p.id === hostId && <span className="chip chip-host">Host</span>}
+            {!p.isBot && !p.connected && <span className="chip chip-off">Offline</span>}
             {isHost && p.id !== you && (p.isBot || !p.connected) && (
-              <button className="btn-remove" type="button" onClick={() => onKick(p.id)}>
+              <button className="chip-danger" type="button" onClick={() => onKick(p.id)}>
                 Remove
               </button>
             )}
@@ -31,20 +31,19 @@ export default function PlayerList({ players, hostId, you, isHost, onKick, onAdd
         </li>
       ))}
 
-      {Array.from({ length: emptySeats }).map((_, i) =>
-        isHost ? (
-          <li key={`empty-${i}`} className="player-row player-row-empty">
+      {Array.from({ length: emptySeats }).map((_, i) => (
+        <li key={`seat-${i}`} className="player-row player-seat-empty">
+          {isHost ? (
             <button className="seat-add" type="button" onClick={onAddBot}>
-              <Bot size={15} /> Add a bot
+              <Bot size={16} /> Add a bot
             </button>
-          </li>
-        ) : (
-          <li key={`empty-${i}`} className="player-row player-row-empty">
-            <UserPlus size={15} style={{ marginRight: 6 }} />
-            Waiting for a player
-          </li>
-        )
-      )}
+          ) : (
+            <span className="hint" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <UserPlus size={15} /> Waiting for a player
+            </span>
+          )}
+        </li>
+      ))}
     </ul>
   );
 }

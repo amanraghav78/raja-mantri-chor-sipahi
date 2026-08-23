@@ -1,0 +1,157 @@
+/* ==========================================================================
+   MODERN ROYAL METALLIC — single source of truth
+   Every colour, gradient, type step, space and motion value in the app is
+   declared here. No screen defines its own literals.
+   ========================================================================== */
+
+:root {
+  /* ---------- Metals (theme-independent brand constants) ---------- */
+  --gold-deep:   #8a6f1f;
+  --gold-core:   #d4af37;
+  --gold-light:  #f5e7a3;
+  --bronze:      #b87333;
+  --bronze-light:#cd8f4e;
+
+  /* ---------- Jewels (role identity, used sparingly) ---------- */
+  --oxblood:     #7a1f2b;
+  --emerald:     #0b6e4f;
+
+  /* ---------- Metallic gradients ----------
+     A metal reads as metal because the highlight sits *across* the face,
+     not because the fill is bright. Each ramp goes dark -> highlight -> dark. */
+  /* The darkest stops stay at #a3842a rather than going deeper, so the
+     near-black label on a gold button clears AA (5.2:1) even at the corners
+     where the ramp bottoms out. */
+  --grad-gold: linear-gradient(
+    135deg,
+    #a3842a 0%,
+    #c9a233 22%,
+    #f5e7a3 48%,
+    #d4af37 62%,
+    #a8872b 100%
+  );
+  --grad-gold-soft: linear-gradient(135deg, rgba(212,175,55,.16) 0%, rgba(245,231,163,.06) 50%, rgba(212,175,55,.14) 100%);
+  --grad-bronze: linear-gradient(135deg, #7d4a1e 0%, #b87333 30%, #e0a76a 52%, #b87333 72%, #7d4a1e 100%);
+  --grad-rim: linear-gradient(150deg, rgba(245,231,163,.75), rgba(212,175,55,.25) 35%, rgba(138,111,31,.15) 60%, rgba(245,231,163,.5));
+
+  /* ---------- Radii (16-20px on cards, per spec) ---------- */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* ---------- 8pt spacing grid ---------- */
+  --s-0: 0;
+  --s-1: 4px;   /* half-step, used only for icon nudges */
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 40px;
+  --s-8: 48px;
+  --s-9: 64px;
+
+  /* ---------- Typography ---------- */
+  --font-display: "Rajdhani", "Trebuchet MS", sans-serif;
+  --font-body: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --t-2xs: 0.6875rem; /* 11px  — micro labels */
+  --t-xs:  0.75rem;   /* 12px  — tags */
+  --t-sm:  0.8125rem; /* 13px  — captions */
+  --t-md:  0.9375rem; /* 15px  — body */
+  --t-lg:  1.0625rem; /* 17px  — lead */
+  --t-xl:  1.375rem;  /* 22px  — section head */
+  --t-2xl: 1.75rem;   /* 28px  — screen head */
+  --t-3xl: 2.25rem;   /* 36px  — display */
+  --t-4xl: 2.75rem;   /* 44px  — hero */
+
+  --track-wide: 0.08em;
+  --track-wider: 0.16em;
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur: 280ms;
+  --dur-slow: 520ms;
+  --dur-coin: 1100ms;
+}
+
+/* ==========================================================================
+   DARK — the default. Charcoal ground, metal on top.
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  --bg:          #0f0f12;
+  --bg-deep:     #0a0a0c;
+  --surface:     #16161a;
+  --surface-2:   #1c1c21;
+  --surface-3:   #24242b;
+  --hairline:    #2e2e36;
+  --hairline-strong: #3a3a44;
+
+  /* Text — warm off-white down to a muted gray-gold, all AA on --bg */
+  --text-hi:     #f4efe2;  /* 16.9:1 */
+  --text-mid:    #b9b1a1;  /*  8.9:1 */
+  --text-low:    #8b8475;  /*  5.1:1 */
+
+  --accent:          var(--gold-core);
+  --accent-soft:     rgba(212, 175, 55, 0.14);
+  --accent-contrast: #14110a;
+
+  /* Role identity — jewel tones lifted just enough to clear AA on charcoal */
+  --role-raja:   #d4af37;  /* 8.2:1  crown  */
+  --role-mantri: #cd8f4e;  /* 6.3:1  scroll */
+  --role-sipahi: #12a06f;  /* 5.2:1  shield */
+  --role-chor:   #e05564;  /* 4.7:1  mask   */
+
+  --positive: #2fbd8a;
+  --negative: #e05564;
+
+  --overlay: rgba(6, 6, 8, 0.72);
+  --motif-ink: rgba(212, 175, 55, 0.055);
+
+  /* Ambient, not harsh — large soft spread, low alpha, no hard offset */
+  --shadow-ambient: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.34);
+  --shadow-raised:  0 2px 4px rgba(0,0,0,.45), 0 18px 48px rgba(0,0,0,.46);
+  --glow-gold:      0 0 0 1px rgba(212,175,55,.4), 0 0 28px rgba(212,175,55,.22);
+}
+
+/* ==========================================================================
+   LIGHT — aged ivory and bronze. Same metal language, daylight ground.
+   ========================================================================== */
+[data-theme="light"] {
+  --bg:          #f2ece0;
+  --bg-deep:     #e8dfcd;
+  --surface:     #fdfaf3;
+  --surface-2:   #f4ecdd;
+  --surface-3:   #e9dfcb;
+  --hairline:    #ddd0b6;
+  --hairline-strong: #c9b894;
+
+  --text-hi:     #1b1813;  /* 15.0:1 */
+  --text-mid:    #5c5445;  /*  6.4:1 */
+  --text-low:    #6e6553;  /*  4.9:1 */
+
+  --accent:          #8a6512;
+  --accent-soft:     rgba(138, 101, 18, 0.12);
+  --accent-contrast: #fffdf7;
+
+  --role-raja:   #8a6512;  /* 6.4:1 */
+  --role-mantri: #8f5320;  /* 6.6:1 */
+  --role-sipahi: #0b6e4f;  /* 5.7:1 */
+  --role-chor:   #99283a;  /* 6.3:1 */
+
+  --positive: #0b6e4f;
+  --negative: #99283a;
+
+  --overlay: rgba(40, 33, 22, 0.5);
+  --motif-ink: rgba(122, 88, 20, 0.07);
+
+  --shadow-ambient: 0 1px 2px rgba(70,55,25,.08), 0 8px 24px rgba(70,55,25,.10);
+  --shadow-raised:  0 2px 4px rgba(70,55,25,.10), 0 18px 48px rgba(70,55,25,.16);
+  --glow-gold:      0 0 0 1px rgba(138,101,18,.35), 0 0 28px rgba(138,101,18,.16);
+}

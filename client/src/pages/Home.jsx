@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertCircle, HelpCircle, Moon, Sun, Loader2 } from "lucide-react";
+import { Mandala, PaisleyRule } from "../components/Ornament.jsx";
 
 export default function Home({
   onCreate,
@@ -26,96 +27,107 @@ export default function Home({
     if (mode === "create") return onCreate(name);
 
     const room = code.trim().toUpperCase();
-    if (!/^[A-Z0-9]{4,6}$/.test(room))
-      return setLocalError("Room codes are 5 letters and numbers");
+    if (!/^[A-Z0-9]{4,6}$/.test(room)) return setLocalError("Room codes are 5 letters and numbers");
     onJoin(room, name);
+  }
+
+  function switchMode(next) {
+    setMode(next);
+    setLocalError("");
   }
 
   const shownError = localError || error;
 
   return (
-    <div className="screen center">
-      <div className="card">
-        <div className="brand">
-          <div className="brand-crest">👑</div>
-          <h1 className="title">Raja Mantri Chor Sipahi</h1>
-          <div className="rule-line">
-            <span style={{ fontSize: "0.7rem", letterSpacing: "0.2em" }}>4 PLAYERS</span>
+    <div className="screen screen-center">
+      <div className="shell stack-5">
+        <header className="stack-2" style={{ alignItems: "center", textAlign: "center" }}>
+          <div className="home-crest">
+            <Mandala size={96} />
+            <span className="home-crest-mark">♛</span>
           </div>
-          <p className="subtitle">
-            The classic party game. Deal the roles, find the Chor, crown a winner.
+          <h1 className="wordmark metal-text">
+            Raja Mantri
+            <br />
+            Chor Sipahi
+          </h1>
+          <PaisleyRule />
+          <p className="lede" style={{ maxWidth: "30ch" }}>
+            Deal the court. Unmask the thief. Claim the crown.
           </p>
-        </div>
+        </header>
 
-        <div className="tabs">
-          <button
-            className={`tab ${mode === "create" ? "tab-active" : ""}`}
-            onClick={() => {
-              setMode("create");
-              setLocalError("");
-            }}
-            type="button"
-          >
-            Create Room
-          </button>
-          <button
-            className={`tab ${mode === "join" ? "tab-active" : ""}`}
-            onClick={() => {
-              setMode("join");
-              setLocalError("");
-            }}
-            type="button"
-          >
-            Join Room
-          </button>
-        </div>
+        <div className="panel panel-lit panel-pad stack">
+          <div className="tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              className="tab"
+              aria-selected={mode === "create"}
+              onClick={() => switchMode("create")}
+            >
+              Create
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className="tab"
+              aria-selected={mode === "join"}
+              onClick={() => switchMode("join")}
+            >
+              Join
+            </button>
+          </div>
 
-        <form onSubmit={submit} className="form">
-          <label className="field">
-            <span>Your name</span>
-            <input
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="e.g. Aman"
-              maxLength={16}
-              autoComplete="nickname"
-              required
-            />
-          </label>
-
-          {mode === "join" && (
-            <label className="field field-code">
-              <span>Room code</span>
+          <form onSubmit={submit} className="stack">
+            <label className="field">
+              <span className="field-label">Your name</span>
               <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                placeholder="ABC12"
-                maxLength={6}
-                autoCapitalize="characters"
-                autoCorrect="off"
+                className="input"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="Aman"
+                maxLength={16}
+                autoComplete="nickname"
                 required
               />
             </label>
-          )}
 
-          {shownError && (
-            <p className="error">
-              <AlertCircle size={15} />
-              {shownError}
-            </p>
-          )}
+            {mode === "join" && (
+              <label className="field">
+                <span className="field-label">Room code</span>
+                <input
+                  className="input input-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  placeholder="ABC12"
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  required
+                />
+              </label>
+            )}
 
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {busy && <Loader2 size={17} className="spin-icon" />}
-            {mode === "create" ? "Create Room" : "Join Room"}
-          </button>
-        </form>
+            {shownError && (
+              <p className="error-line">
+                <AlertCircle size={15} />
+                {shownError}
+              </p>
+            )}
 
-        <div className="share-row" style={{ marginTop: 18 }}>
-          <button className="btn btn-ghost" type="button" onClick={onOpenHowTo}>
+            <button type="submit" className="btn btn-gold btn-full" disabled={busy}>
+              {busy && <Loader2 size={18} className="spin-icon" />}
+              {mode === "create" ? "Create Room" : "Join Room"}
+            </button>
+          </form>
+        </div>
+
+        <div className="share-row" style={{ justifyContent: "center" }}>
+          <button className="link-btn" type="button" onClick={onOpenHowTo}>
             <HelpCircle size={16} /> How to play
           </button>
-          <button className="btn btn-ghost" type="button" onClick={onToggleTheme}>
+          <button className="link-btn" type="button" onClick={onToggleTheme}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Light" : "Dark"}
           </button>
